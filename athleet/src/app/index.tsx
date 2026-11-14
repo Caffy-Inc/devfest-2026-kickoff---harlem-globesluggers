@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -45,6 +45,8 @@ const ORDER: Step[] = ['age', 'gender', 'height', 'weight', 'goal', 'sport', 'le
 
 
 export default function HomeScreen() {
+  const { height, width } = useWindowDimensions();
+  const heroSize = Math.min(width - 48, height * 0.34, 320);
   const [step, setStep] = useState<Step>('age');
   const [error, setError] = useState('');
   const [units, setUnits] = useState<Units>('imperial');
@@ -122,7 +124,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.header}>
           <Text style={styles.logo}>athleet<Text style={styles.logoDot}>.</Text></Text>
           {step !== 'age' && (
@@ -140,7 +142,7 @@ export default function HomeScreen() {
 
         {step === 'age' && (
           <View style={styles.intro}>
-            <Image source={require('@/assets/images/swag.jpg')} style={styles.heroLogo} contentFit="contain" />
+            <Image source={require('@/assets/images/swag.jpg')} style={[styles.heroLogo, { width: heroSize, height: heroSize }]} contentFit="contain" />
             <Text style={styles.description}>How old are you?</Text>
             <TextInput
               accessibilityLabel="Your age"
@@ -366,13 +368,13 @@ const styles = StyleSheet.create({
   backText: { color: '#a0a0a6', fontSize: 15 },
   progressTrack: { height: 4, backgroundColor: '#2a2a2e', borderRadius: 2, marginTop: 16 },
   progressFill: { height: 4, backgroundColor: '#f5f5f5', borderRadius: 2 },
-  intro: { flex: 1, justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 64 },
-  heroLogo: { width: '100%', maxWidth: 480, aspectRatio: 1, alignSelf: 'center', marginTop: 0, marginBottom: -24 },
+  intro: { flex: 1, justifyContent: 'center', paddingTop: 32, paddingBottom: 48 },
+  heroLogo: { alignSelf: 'center', marginBottom: 16 },
   description: { color: '#b0b0b5', fontSize: 18, marginTop: 0, marginBottom: 24, textAlign: 'center' },
   question: { color: '#f5f5f5', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtle: { color: '#8a8a90', fontSize: 14, marginBottom: 8, textAlign: 'center' },
   row: { flexDirection: 'row', gap: 12 },
-  flex: { flex: 1 },
+  flex: { flex: 1, minWidth: 0 },
   input: { height: 58, borderWidth: 1, borderColor: '#3a3a40', borderRadius: 6, paddingHorizontal: 16, backgroundColor: '#1a1a1d', fontSize: 17, color: '#f5f5f5', textAlign: 'center', marginTop: 16 },
   error: { color: '#d0d0d5', fontSize: 13, marginTop: 8, textAlign: 'center' },
   button: { backgroundColor: '#f5f5f5', borderRadius: 6, padding: 18, alignItems: 'center', marginTop: 16 },
@@ -396,7 +398,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#1a1a1d', borderWidth: 1, borderColor: '#2a2a2e', borderRadius: 6, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 16 },
   cardHighlight: { borderColor: '#f5f5f5', borderWidth: 2, padding: 18 },
   cardDim: { opacity: 0.5 },
-  cardText: { flex: 1, gap: 2 },
+  cardText: { flex: 1, minWidth: 0, gap: 2 },
   chevron: { color: '#6b6b72', fontSize: 28, fontWeight: '300' },
   pressed: { opacity: 0.7 },
   subtleLeft: { color: '#8a8a90', fontSize: 13, marginTop: 4 },
