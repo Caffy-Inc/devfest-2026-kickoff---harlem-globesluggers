@@ -122,4 +122,5 @@ const styles = StyleSheet.create({
   tagline: { fontSize: 14, color: '#555555' },
   tags: { fontSize: 12, color: '#888888', marginTop: 2, textTransform: 'capitalize' },
   editAge: { alignSelf: 'flex-start', marginTop: 32, paddingVertical: 8 },
-  editAgeText: { color: '#555555',
+  editAgeText: { color: '#555555', fontSize: 14, textDecorationLine: 'underline' },
+});
