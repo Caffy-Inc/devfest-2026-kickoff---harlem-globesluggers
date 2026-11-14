@@ -151,7 +151,7 @@ export default function HomeScreen() {
               onChangeText={(v) => { setAge(v); setError(''); }}
               placeholder="Enter your age"
               placeholderTextColor="#6b6b72"
-                  keyboardAppearance="dark"
+              keyboardAppearance="dark"
               keyboardType="number-pad"
               maxLength={3}
               onSubmitEditing={submitAge}
@@ -207,7 +207,7 @@ export default function HomeScreen() {
                 onChangeText={(v) => { setCm(v); setError(''); }}
                 placeholder="cm"
                 placeholderTextColor="#6b6b72"
-                  keyboardAppearance="dark"
+                keyboardAppearance="dark"
                 keyboardType="number-pad"
                 maxLength={3}
                 onSubmitEditing={submitHeight}
@@ -229,7 +229,7 @@ export default function HomeScreen() {
               onChangeText={(v) => { setWeight(v); setError(''); }}
               placeholder={units === 'imperial' ? 'lbs' : 'kg'}
               placeholderTextColor="#6b6b72"
-                  keyboardAppearance="dark"
+              keyboardAppearance="dark"
               keyboardType="decimal-pad"
               maxLength={5}
               onSubmitEditing={submitWeight}
@@ -368,8 +368,8 @@ const styles = StyleSheet.create({
   backText: { color: '#a0a0a6', fontSize: 15 },
   progressTrack: { height: 4, backgroundColor: '#2a2a2e', borderRadius: 2, marginTop: 16 },
   progressFill: { height: 4, backgroundColor: '#f5f5f5', borderRadius: 2 },
-  intro: { flex: 1, justifyContent: 'center', paddingTop: 32, paddingBottom: 48 },
-  heroLogo: { alignSelf: 'center', marginBottom: 16 },
+  intro: { flex: 1, justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 64 },
+  heroLogo: { width: '100%', maxWidth: 480, aspectRatio: 1, alignSelf: 'center', marginTop: 0, marginBottom: -24 },
   description: { color: '#b0b0b5', fontSize: 18, marginTop: 0, marginBottom: 24, textAlign: 'center' },
   question: { color: '#f5f5f5', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtle: { color: '#8a8a90', fontSize: 14, marginBottom: 8, textAlign: 'center' },
