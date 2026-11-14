@@ -1,4 +1,4 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View,
@@ -33,6 +33,19 @@ export default function ChatScreen() {
     );
   }
 
+  function openPlan() {
+    router.push({
+      pathname: '/plan',
+      params: {
+        coachId: coach?.id,
+        age: String(profile?.age || 26),
+        goal: profile?.goal || 'build_muscle',
+        level: profile?.level || 'intermediate',
+        sex: profile?.sex || 'male',
+      },
+    });
+  }
+
   async function send(text: string) {
     const content = text.trim();
     if (!content || typing || !coach) return;
@@ -62,6 +75,16 @@ export default function ChatScreen() {
               </View>
             </View>
           ),
+          headerRight: () => (
+            <Pressable
+              onPress={openPlan}
+              style={styles.headerPlanBtn}
+              accessibilityRole="button"
+              accessibilityLabel="View workout plan"
+            >
+              <Text style={styles.headerPlanBtnText}>📋 Plan</Text>
+            </Pressable>
+          ),
           headerStyle: { backgroundColor: '#0d0d0f' },
           headerTintColor: '#f5f5f5',
           headerBackTitle: 'Back',
@@ -83,6 +106,15 @@ export default function ChatScreen() {
                 <CoachAvatar coach={coach} size={28} />
                 <View style={[styles.bubble, styles.coachBubble]}>
                   <Text style={styles.coachText}>{item.content}</Text>
+                  {/plan|routine|program|structure/.test(item.content.toLowerCase()) && (
+                    <Pressable
+                      style={styles.inlinePlanBtn}
+                      onPress={openPlan}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.inlinePlanText}>⚡ View Full Workout Routine →</Text>
+                    </Pressable>
+                  )}
                 </View>
               </View>
             ) : (
@@ -92,7 +124,7 @@ export default function ChatScreen() {
             )
           }
           ListFooterComponent={
-            typing ? <Text style={styles.typing}>{coach.name.split(' ')[0]} is typing…</Text> : null
+            typing ? <Text style={styles.typing}>{coach.name.split(' ')[0]} is typing…</Text> : undefined
           }
         />
 
@@ -137,12 +169,33 @@ const styles = StyleSheet.create({
   headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   headerName: { color: '#f5f5f5', fontWeight: '700', fontSize: 16 },
   headerSub: { color: '#8a8a90', fontSize: 12 },
+  headerPlanBtn: {
+    backgroundColor: '#2a2a2e',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    marginRight: 4,
+  },
+  headerPlanBtnText: {
+    color: '#f5f5f5',
+    fontSize: 13,
+    fontWeight: '700',
+  },
   list: { padding: 16, gap: 12 },
   coachRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, maxWidth: '85%' },
   bubble: { borderRadius: 16, paddingVertical: 10, paddingHorizontal: 14 },
   coachBubble: { backgroundColor: '#1a1a1d', borderWidth: 1, borderColor: '#2a2a2e', borderBottomLeftRadius: 4, flexShrink: 1 },
   userBubble: { backgroundColor: '#f5f5f5', alignSelf: 'flex-end', maxWidth: '80%', borderBottomRightRadius: 4 },
   coachText: { color: '#f5f5f5', fontSize: 15, lineHeight: 21 },
+  inlinePlanBtn: {
+    marginTop: 10,
+    backgroundColor: '#2a2a2e',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignSelf: 'flex-start',
+  },
+  inlinePlanText: { color: '#f5f5f5', fontSize: 13, fontWeight: '700' },
   userText: { color: '#0d0d0f', fontSize: 15, lineHeight: 21 },
   typing: { color: '#8a8a90', fontSize: 13, marginTop: 4, marginLeft: 36 },
   quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, paddingBottom: 8 },

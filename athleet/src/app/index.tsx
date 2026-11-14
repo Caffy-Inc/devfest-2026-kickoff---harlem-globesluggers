@@ -80,7 +80,7 @@ export default function HomeScreen() {
         goal, sport, level, daysPerWeek: 4, sessionMinutes: 60, equipment: 'full_gym', injuries: 'none',
       });
     }
-    router.push({ pathname: '/chat/[id]', params: { id: coachId } });
+    router.push({ pathname: '/chat/[id]' as any, params: { id: coachId } });
   }
 
   function go(next: Step) {
