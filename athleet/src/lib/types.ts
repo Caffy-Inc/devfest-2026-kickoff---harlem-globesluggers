@@ -35,6 +35,9 @@ export type Coach = {
   bestFor: string[];
   signature: { split: string; staples: string[]; methods: string[]; recovery: string[] };
   avatar: string;
+  icon: string;      // placeholder emoji until real art is added
+  color: string;     // avatar background color
+  greeting: string;  // first chat message, in the coach's voice
 };
 
 export type PlanExercise = { name: string; sets: number; reps: string; rest: string; notes?: string };

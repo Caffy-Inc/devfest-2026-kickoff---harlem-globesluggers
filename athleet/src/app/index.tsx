@@ -2,9 +2,12 @@ import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 
+import { CoachAvatar } from '@/components/coach-avatar';
 import { COACHES } from '@/data/coaches';
 import { rankCoaches } from '@/lib/match';
+import { setProfile } from '@/lib/profile-store';
 import type { Goal, Level, Sex } from '@/lib/types';
 
 type Step = 'age' | 'gender' | 'height' | 'weight' | 'goal' | 'sport' | 'level' | 'results';
@@ -40,9 +43,6 @@ const LEVELS: Option<Level>[] = [
 
 const ORDER: Step[] = ['age', 'gender', 'height', 'weight', 'goal', 'sport', 'level', 'results'];
 
-function initials(name: string) {
-  return name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
-}
 
 export default function HomeScreen() {
   const [step, setStep] = useState<Step>('age');
@@ -70,6 +70,16 @@ export default function HomeScreen() {
         : [],
     [age, goal, sport, level]
   );
+
+  function openChat(coachId: string) {
+    if (sex && goal && level) {
+      setProfile({
+        age: Number(age), sex, heightCm: Math.round(heightCm), weightKg: Math.round(weightKg),
+        goal, sport, level, daysPerWeek: 4, sessionMinutes: 60, equipment: 'full_gym', injuries: 'none',
+      });
+    }
+    router.push({ pathname: '/chat/[id]', params: { id: coachId } });
+  }
 
   function go(next: Step) {
     setError('');
@@ -139,7 +149,7 @@ export default function HomeScreen() {
               onChangeText={(v) => { setAge(v); setError(''); }}
               placeholder="Enter your age"
               placeholderTextColor="#6b6b72"
-              keyboardAppearance="dark"
+                  keyboardAppearance="dark"
               keyboardType="number-pad"
               maxLength={3}
               onSubmitEditing={submitAge}
@@ -195,7 +205,7 @@ export default function HomeScreen() {
                 onChangeText={(v) => { setCm(v); setError(''); }}
                 placeholder="cm"
                 placeholderTextColor="#6b6b72"
-                keyboardAppearance="dark"
+                  keyboardAppearance="dark"
                 keyboardType="number-pad"
                 maxLength={3}
                 onSubmitEditing={submitHeight}
@@ -217,7 +227,7 @@ export default function HomeScreen() {
               onChangeText={(v) => { setWeight(v); setError(''); }}
               placeholder={units === 'imperial' ? 'lbs' : 'kg'}
               placeholderTextColor="#6b6b72"
-              keyboardAppearance="dark"
+                  keyboardAppearance="dark"
               keyboardType="decimal-pad"
               maxLength={5}
               onSubmitEditing={submitWeight}
@@ -251,13 +261,14 @@ export default function HomeScreen() {
         {step === 'results' && matches.length > 0 && (
           <View style={styles.list}>
             <Text style={styles.resultsLabel}>Your coach</Text>
-            <CoachCard match={matches[0]} highlight />
+            <Text style={styles.subtleLeft}>Tap any coach to start chatting.</Text>
+            <CoachCard match={matches[0]} highlight onPress={openChat} />
 
             <Text style={[styles.resultsLabel, styles.spaced]}>Also a good fit</Text>
-            {matches.slice(1, 3).map((m) => <CoachCard key={m.coach.id} match={m} />)}
+            {matches.slice(1, 3).map((m) => <CoachCard key={m.coach.id} match={m} onPress={openChat} />)}
 
             <Text style={[styles.resultsLabel, styles.spaced]}>All coaches</Text>
-            {matches.slice(3).map((m) => <CoachCard key={m.coach.id} match={m} />)}
+            {matches.slice(3).map((m) => <CoachCard key={m.coach.id} match={m} onPress={openChat} />)}
 
             <Text style={styles.summary}>
               {age} yrs · {Math.round(heightCm)} cm · {Math.round(weightKg)} kg · {sex}
@@ -321,14 +332,18 @@ function ErrorText({ text }: { text: string }) {
   return text ? <Text style={styles.error}>{text}</Text> : null;
 }
 
-function CoachCard({ match, highlight }: { match: ReturnType<typeof rankCoaches>[number]; highlight?: boolean }) {
+function CoachCard({
+  match, highlight, onPress,
+}: { match: ReturnType<typeof rankCoaches>[number]; highlight?: boolean; onPress: (id: string) => void }) {
   const { coach, fitsAge, reasons } = match;
   return (
-    <View style={styles.section}>
+    <Pressable
+      style={({ pressed }) => [styles.section, pressed && styles.pressed]}
+      onPress={() => onPress(coach.id)}
+      accessibilityRole="button"
+      accessibilityLabel={`Chat with ${coach.name}`}>
       <View style={[styles.card, highlight && styles.cardHighlight, !fitsAge && styles.cardDim]}>
-        <View style={[styles.avatar, highlight && styles.avatarHighlight]}>
-          <Text style={[styles.initials, highlight && styles.initialsHighlight]}>{initials(coach.name)}</Text>
-        </View>
+        <CoachAvatar coach={coach} size={highlight ? 72 : 60} />
         <View style={styles.cardText}>
           <Text style={styles.category}>{coach.category}</Text>
           <Text style={styles.name}>{coach.name}</Text>
@@ -336,8 +351,9 @@ function CoachCard({ match, highlight }: { match: ReturnType<typeof rankCoaches>
           {reasons.length > 0 && <Text style={styles.tags}>{reasons.join(' · ')}</Text>}
           {!fitsAge && <Text style={styles.tags}>Not ideal for your age</Text>}
         </View>
+        <Text style={styles.chevron}>›</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -381,10 +397,9 @@ const styles = StyleSheet.create({
   cardHighlight: { borderColor: '#f5f5f5', borderWidth: 2, padding: 18 },
   cardDim: { opacity: 0.5 },
   cardText: { flex: 1, gap: 2 },
-  avatar: { backgroundColor: '#2a2a2e', width: 64, height: 64, borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
-  avatarHighlight: { backgroundColor: '#f5f5f5' },
-  initials: { color: '#d0d0d5', fontSize: 20, fontWeight: '800' },
-  initialsHighlight: { color: '#0d0d0f' },
+  chevron: { color: '#6b6b72', fontSize: 28, fontWeight: '300' },
+  pressed: { opacity: 0.7 },
+  subtleLeft: { color: '#8a8a90', fontSize: 13, marginTop: 4 },
   category: { fontSize: 12, fontWeight: '700', color: '#8a8a90', textTransform: 'uppercase' },
   name: { fontSize: 18, fontWeight: '700', color: '#f5f5f5' },
   tagline: { fontSize: 14, color: '#a0a0a6' },

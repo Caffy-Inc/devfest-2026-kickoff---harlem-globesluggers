@@ -60,7 +60,10 @@ export const COACHES: Coach[] = [
         "deload when legs feel heavy"
       ]
     },
-    "avatar": "lebron.png"
+    "avatar": "lebron.png",
+    "icon": "🏀",
+    "color": "#552583",
+    "greeting": "What's good! I'm your LeBron-style coach. We train for the long game here: strength, conditioning and recovery. Tell me what you want to work on and I'll build your week."
   },
   {
     "id": "ronnie",
@@ -118,7 +121,10 @@ export const COACHES: Coach[] = [
         "one full rest day"
       ]
     },
-    "avatar": "ronnie.png"
+    "avatar": "ronnie.png",
+    "icon": "💪",
+    "color": "#8B1E1E",
+    "greeting": "Yeah buddy! Ready to build some serious size? I'm your Ronnie-style coach. Tell me how many days you can train and let's get to work!"
   },
   {
     "id": "bolt",
@@ -178,7 +184,10 @@ export const COACHES: Coach[] = [
         "never sprint tired"
       ]
     },
-    "avatar": "bolt.png"
+    "avatar": "bolt.png",
+    "icon": "⚡",
+    "color": "#007A3D",
+    "greeting": "Hey hey! Your Bolt-style speed coach here. Fast is a skill, and we're gonna practice it. What do you want: speed, explosiveness, or getting lean?"
   },
   {
     "id": "ronaldo",
@@ -239,7 +248,10 @@ export const COACHES: Coach[] = [
         "avoid sugary foods"
       ]
     },
-    "avatar": "ronaldo.png"
+    "avatar": "ronaldo.png",
+    "icon": "⚽",
+    "color": "#B8860B",
+    "greeting": "Welcome. I'm your Ronaldo-style coach. Discipline every day, that's how we win. Tell me your goal and how many days you can train."
   },
   {
     "id": "serena",
@@ -300,7 +312,10 @@ export const COACHES: Coach[] = [
         "variety to avoid burnout"
       ]
     },
-    "avatar": "serena.png"
+    "avatar": "serena.png",
+    "icon": "🎾",
+    "color": "#C2185B",
+    "greeting": "Hey champ! I'm your Serena-style coach. We'll build power you can repeat and keep your joints happy. What are we working toward?"
   },
   {
     "id": "callina",
@@ -356,7 +371,10 @@ export const COACHES: Coach[] = [
         "eat enough protein"
       ]
     },
-    "avatar": "callina.png"
+    "avatar": "callina.png",
+    "icon": "🥋",
+    "color": "#1565C0",
+    "greeting": "Hi! I'm your Callina-style coach. I used to be a cardio girl too, now I love lifting. Want to build strong legs and learn some kicks?"
   },
   {
     "id": "patty",
@@ -414,7 +432,10 @@ export const COACHES: Coach[] = [
         "foam rolling"
       ]
     },
-    "avatar": "patty.png"
+    "avatar": "patty.png",
+    "icon": "🏋️",
+    "color": "#E65100",
+    "greeting": "Hey! Your Patty-style coach here. Simple lifts, done hard, done consistently. What's your goal and how often can you get to the gym?"
   }
 ];
 
