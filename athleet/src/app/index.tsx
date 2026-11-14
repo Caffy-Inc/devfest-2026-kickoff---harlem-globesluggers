@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 
 import { COACHES } from '@/data/coaches';
 
@@ -46,6 +47,7 @@ export default function HomeScreen() {
 
         {!started ? (
           <View style={styles.intro}>
+            <Image source={require('@/assets/images/swag.jpg')} style={styles.heroLogo} contentFit="contain" />
             <Text style={styles.description}>How old are you?</Text>
             <TextInput
               accessibilityLabel="Your age"
@@ -104,6 +106,7 @@ const styles = StyleSheet.create({
   logo: { fontSize: 27, fontWeight: '800', color: '#f5f5f5', letterSpacing: -1 },
   logoDot: { color: '#f5f5f5' },
   intro: { flex: 1, justifyContent: 'center', paddingVertical: 64 },
+  heroLogo: { width: '100%', maxWidth: 320, aspectRatio: 1, alignSelf: 'center', marginTop: 12 },
   description: { color: '#b0b0b5', fontSize: 18, marginTop: 12, marginBottom: 40, textAlign: 'center' },
   input: { height: 58, borderWidth: 1, borderColor: '#3a3a40', borderRadius: 6, paddingHorizontal: 16, backgroundColor: '#1a1a1d', fontSize: 17, color: '#f5f5f5', textAlign: 'center' },
   error: { color: '#d0d0d5', fontSize: 13, marginTop: 8, textAlign: 'center' },
