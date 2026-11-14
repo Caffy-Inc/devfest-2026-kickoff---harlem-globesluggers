@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   logo: { fontSize: 27, fontWeight: '800', color: '#222222', letterSpacing: -1 },
   logoDot: { color: '#222222' },
   intro: { flex: 1, justifyContent: 'center', paddingVertical: 64 },
-  description: { color: '#444444', fontSize: 18, marginTop: 12, marginBottom: 40 },
+  description: { color: '#444444', fontSize: 18, marginTop: 12, marginBottom: 40, textAlign: 'center' },
   input: { height: 58, borderWidth: 1, borderColor: '#cccccc', borderRadius: 6, paddingHorizontal: 16, backgroundColor: '#fff', fontSize: 17, color: '#222222' },
   error: { color: '#444444', fontSize: 13, marginTop: 8 },
   button: { backgroundColor: '#222222', borderRadius: 6, padding: 18, alignItems: 'center', marginTop: 16 },
