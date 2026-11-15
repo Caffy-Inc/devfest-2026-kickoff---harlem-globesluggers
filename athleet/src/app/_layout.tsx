@@ -5,6 +5,7 @@ export default function RootLayout() {
     <ThemeProvider value={DarkTheme}>
       <Stack screenOptions={{ contentStyle: { backgroundColor: '#0d0d0f' } }}>
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="questionnaire" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="chat/[id]" options={{ title: 'Chat' }} />
         <Stack.Screen name="plan" options={{ headerShown: false }} />
