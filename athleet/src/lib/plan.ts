@@ -287,15 +287,70 @@ function buildExercise(t: TemplateExercise, c: Context): PlanExercise {
   };
 }
 
-function estimateMinutes(exercises: PlanExercise[], base = 15): number {
-  let mins = base; // warm-up + cooldown
-  for (const e of exercises) {
-    const timed = e.reps.match(/(\d+)\s*min/);
-    const rounds = e.reps.match(/^(\d+)\s*x/);
-    if (timed && !rounds) mins += Number(timed[1]);
-    else if (rounds) mins += Number(rounds[1]) * 1.5;
-    else mins += e.sets * 2.5;
+/** Average of every duration in a string like "90s-2 min", "45-60s" or "20-30 min", in seconds. */
+function parseSeconds(text: string): number | null {
+  const re = /(\d+(?:\.\d+)?)\s*(s|sec|min)?\b/gi;
+  const nums: number[] = [];
+  const pending: number[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    const n = Number(m[1]);
+    const unit = m[2]?.toLowerCase();
+    if (!unit) { pending.push(n); continue; }
+    const mult = unit === 'min' ? 60 : 1;
+    // "45-60s": the bare 45 takes the unit that follows it.
+    for (const p of pending) nums.push(p * mult);
+    pending.length = 0;
+    nums.push(n * mult);
   }
+  if (!nums.length) return null;
+  return nums.reduce((a, b) => a + b, 0) / nums.length;
+}
+
+/** Average of a count like "8-10" or "6". */
+function avgCount(text: string): number {
+  const ns = (text.match(/\d+/g) ?? []).map(Number);
+  return ns.length ? ns.reduce((a, b) => a + b, 0) / ns.length : 0;
+}
+
+const TRANSITION_MIN = 1; // set up, load the bar, walk to the next station
+
+/** Realistic minutes one exercise takes, including rest between sets. */
+export function exerciseMinutes(e: PlanExercise): number {
+  const reps = e.reps.toLowerCase();
+  const restSec = parseSeconds(e.rest) ?? 0;
+  const sides = /each (side|leg|arm)/.test(reps) ? 2 : 1;
+
+  // "6 x 30m", "8 x 30s hard", "4 x 20m @ 80%": rounds with short work and rest between.
+  const rounds = reps.match(/^(\d+)\s*x\s*(.*)$/);
+  if (rounds) {
+    const n = Number(rounds[1]);
+    const workSec = /\d+\s*(s|sec|min)\b/.test(rounds[2]) ? parseSeconds(rounds[2]) ?? 20 : 15;
+    const between = restSec || (/hard|sprint/.test(reps) ? 60 : 45);
+    return (n * workSec + (n - 1) * between) / 60 + TRANSITION_MIN;
+  }
+  // "20 min", "20-30 min easy", "10 min"
+  if (/\bmin\b/.test(reps)) return (parseSeconds(reps) ?? 600) / 60 + TRANSITION_MIN;
+  // "8-10 rounds" of an interval (e.g. 20s hard / 40s easy) = about a minute each
+  if (/round/.test(reps)) return avgCount(reps) + TRANSITION_MIN;
+
+  // Regular sets: time under tension per set + rest between sets.
+  const timedHold = /\d+\s*s\b/.test(reps) ? parseSeconds(reps) : null; // "30-45s" plank
+  const repCount = avgCount(reps) || 10;
+  // ~4s per rep, but fast pulses/taps ("100 pulses") still cap out around 90s a set.
+  const workSec = (timedHold ?? Math.min(90, Math.max(25, repCount * 4))) * sides;
+  const sets = Math.max(1, e.sets);
+  // Rest of "—" (e.g. court sprints "10 reps") still needs a walk-back between efforts.
+  const rest = restSec || (sets === 1 && !timedHold ? 0 : 30);
+  if (sets === 1 && !timedHold && /rep/.test(reps)) {
+    // "10 reps" of a sprint/drill: ~10s work + ~35s walk back each
+    return (repCount * 45) / 60 + TRANSITION_MIN;
+  }
+  return (sets * workSec + (sets - 1) * rest) / 60 + TRANSITION_MIN;
+}
+
+function estimateMinutes(exercises: PlanExercise[], base = 15): number {
+  const mins = base + exercises.reduce((sum, e) => sum + exerciseMinutes(e), 0);
   return Math.round(mins / 5) * 5;
 }
 
@@ -416,27 +471,52 @@ function dayTemplates(program: (typeof PROGRAMS)[string], days: number, sportPic
   return fullBodyDays(program, days as 1 | 2, sportPick, seed);
 }
 
-/** Minutes of warm-up + cooldown for a given session length. */
-function warmupMinutes(minutes: number): number {
-  return minutes < 30 ? 7 : 15;
+/** Minutes the coach's warm-up text asks for, e.g. "20-min dynamic warm-up" -> 20. */
+function minutesIn(text: string, fallback: number): number {
+  const m = text.match(/(\d+)(?:\s*-\s*(\d+))?\s*-?\s*min/i);
+  if (!m) return fallback;
+  return m[2] ? (Number(m[1]) + Number(m[2])) / 2 : Number(m[1]);
+}
+
+/** Minutes of warm-up + cooldown for a given session length and coach. */
+function warmupMinutes(minutes: number, program?: (typeof PROGRAMS)[string], age = 30): number {
+  if (minutes < 30) return 7; // 5-min quick warm-up + 2-3 min stretch
+  if (!program) return 15;
+  const warm = minutesIn(program.warmup, 10) + (age >= 45 ? 5 : 0);
+  const cool = minutesIn(program.cooldown, 8);
+  // Don't let warm-up/cooldown eat more than about a third of a short session.
+  return Math.min(warm + cool, Math.max(10, Math.round(minutes / 3)));
 }
 
 /** Trim or extend a day so it fits the session length. */
 type Item = { t: TemplateExercise; e: PlanExercise };
 
+const SET_CAP: Partial<Record<ExerciseKind, number>> = { main: 5, accessory: 4, power: 4, core: 4 };
+
+/** How close (in minutes) a finished day should be to the selected length. */
+const TOLERANCE = 5;
+
 /**
- * Fit a day into the session length without breaking what the day's label promises:
- * 1) drop extra exercises for a body part that's already covered (from the end),
- * 2) drop conditioning/skill extras, 3) trim sets, 4) only then drop whole exercises.
+ * Fit a day into the session length without breaking what the day's label promises.
+ * Too long:  1) drop extra exercises for a body part that's already covered (from the end),
+ *            2) drop conditioning/skill extras, 3) trim sets, 4) shorten timed drills, 5) only then drop exercises.
+ * Too short: 1) one more set on the lifts, 2) more of the coach's exercises (same body parts first),
+ *            3) more sets up to a safe cap, 4) a conditioning / mobility block for the remainder.
  */
-function fitToTime(items: Item[], minutes: number, minKeep: number): PlanExercise[] {
-  const base = warmupMinutes(minutes);
-  const est = (l: Item[]) => estimateMinutes(l.map((x) => x.e), base);
+function fitToTime(
+  items: Item[],
+  minutes: number,
+  minKeep: number,
+  base: number,
+  extras: Item[],
+  c: Context,
+): PlanExercise[] {
+  const est = (l: Item[]) => base + l.reduce((sum, x) => sum + exerciseMinutes(x.e), 0);
   let list = [...items];
 
   const dropLast = (pred: (x: Item, i: number, all: Item[]) => boolean) => {
     for (let i = list.length - 1; i > 0; i--) {
-      if (est(list) <= minutes || list.length <= minKeep) return;
+      if (est(list) <= minutes + TOLERANCE || list.length <= minKeep) return;
       if (pred(list[i], i, list)) list = list.filter((_, j) => j !== i);
     }
   };
@@ -444,13 +524,87 @@ function fitToTime(items: Item[], minutes: number, minKeep: number): PlanExercis
   dropLast((x, i, all) => all.some((y, j) => j < i && regionOf(y.t) === regionOf(x.t)));
   // 2) extras that aren't strength for a body part
   dropLast((x) => ['cardio', 'skill', 'power', 'mobility'].includes(regionOf(x.t)) && x.t.kind !== 'skill');
-  // 3) fewer sets
-  if (est(list) > minutes) list = list.map((x) => (x.e.sets > 2 ? { ...x, e: { ...x.e, sets: x.e.sets - 1 } } : x));
-  // 4) last resort
-  while (list.length > minKeep && est(list) > minutes) list = list.slice(0, -1);
+  // 3) fewer sets, one at a time from the end, down to 2 per exercise
+  for (let trimmed = true; trimmed && est(list) > minutes + TOLERANCE; ) {
+    trimmed = false;
+    for (let i = list.length - 1; i >= 0 && est(list) > minutes + TOLERANCE; i--) {
+      if (list[i].e.sets > 2) {
+        list[i] = { ...list[i], e: { ...list[i].e, sets: list[i].e.sets - 1 } };
+        trimmed = true;
+      }
+    }
+  }
+  // 4) shorten timed drills and interval rounds
+  for (let i = list.length - 1; i >= 0 && est(list) > minutes + TOLERANCE; i--) {
+    const m = list[i].e.reps.match(/^(\d+)(?:-\d+)?\s*min\b(.*)$/);
+    if (m && Number(m[1]) > 5) {
+      const reps = `${Math.max(5, Math.round(Number(m[1]) / 2 / 5) * 5)} min${m[2]}`;
+      list[i] = { ...list[i], e: { ...list[i].e, reps } };
+    }
+    // ...and interval rounds ("10 x 1 min" -> "5 x 1 min")
+    const r = list[i].e.reps.match(/^(\d+)(\s*x\s.*)$/);
+    if (r && Number(r[1]) > 3 && est(list) > minutes + TOLERANCE) {
+      list[i] = { ...list[i], e: { ...list[i].e, reps: `${Math.max(3, Math.ceil(Number(r[1]) / 2))}${r[2]}` } };
+    }
+  }
+  // 5) last resort
+  while (list.length > minKeep && est(list) > minutes + TOLERANCE) list = list.slice(0, -1);
 
-  if (minutes - est(list) >= 25) {
-    list = list.map((x) => (x.e.sets >= 2 && x.e.sets < 5 ? { ...x, e: { ...x.e, sets: x.e.sets + 1 } } : x));
+  // ---- Extend short days ----
+  const gap = () => minutes - est(list);
+  const fits = (l: Item[]) => est(l) <= minutes + TOLERANCE;
+  const setCap = (x: Item) => {
+    const cap = SET_CAP[x.t.kind] ?? 0;
+    return c.kid || c.senior ? Math.min(cap, 3) : c.minor || c.age >= 50 ? Math.min(cap, 4) : cap;
+  };
+  const addSets = (limitAbove: (x: Item) => number) => {
+    let changed = true;
+    while (gap() > TOLERANCE && changed) {
+      changed = false;
+      for (let i = 0; i < list.length && gap() > TOLERANCE; i++) {
+        const x = list[i];
+        if (x.e.sets < 2 || x.e.sets >= Math.min(setCap(x), limitAbove(x))) continue;
+        const next = list.map((y, j) => (j === i ? { ...y, e: { ...y.e, sets: y.e.sets + 1 } } : y));
+        if (fits(next)) { list = next; changed = true; }
+      }
+    }
+  };
+  const startSets = new Map(list.map((x) => [x, x.e.sets]));
+
+  // 1) one extra set on what's already there
+  addSets((x) => (startSets.get(x) ?? x.e.sets) + 1);
+
+  // 2) more of the coach's own exercises: body parts this day already trains first
+  const has = (name: string) => list.some((x) => x.e.name.toLowerCase() === name.toLowerCase());
+  const dayRegions = new Set(list.map((x) => regionOf(x.t)));
+  // Sport drills only go on days that already have skill work.
+  const usable = extras.filter((x) => x.t.kind !== 'skill' || dayRegions.has('skill'));
+  const ranked = [
+    ...usable.filter((x) => dayRegions.has(regionOf(x.t))),
+    ...usable.filter((x) => !dayRegions.has(regionOf(x.t))),
+  ];
+  const MAX_EXERCISES = c.kid || c.senior ? 7 : 10;
+  for (const x of ranked) {
+    if (gap() <= TOLERANCE || list.length >= MAX_EXERCISES) break;
+    if (has(x.e.name)) continue;
+    const next = [...list, x];
+    if (fits(next)) list = next;
+  }
+
+  // 3) more sets, up to a safe cap
+  addSets(() => Infinity);
+
+  // 4) whatever is left: a timed block (conditioning, then mobility) sized to the remainder
+  const blocks: { name: string; kind: ExerciseKind; max: number }[] = [
+    { name: c.lowImpact || c.senior ? 'Steady bike or incline walk (zone 2)' : 'Zone 2 cardio (bike, row or jog)', kind: 'conditioning', max: 40 },
+    { name: 'Mobility and stretching circuit', kind: 'mobility', max: 25 },
+  ];
+  for (const b of blocks) {
+    const left = Math.floor((gap() - TRANSITION_MIN) / 5) * 5;
+    if (gap() <= TOLERANCE || left < 5) break;
+    const blockMin = Math.min(b.max, left);
+    const t: TemplateExercise = { name: b.name, kind: b.kind, reps: `${blockMin} min` };
+    list = [...list, { t, e: { name: b.name, sets: 1, reps: `${blockMin} min`, rest: '—' } }];
   }
   return list.map((x) => x.e);
 }
@@ -479,7 +633,18 @@ export function generatePlan(coach: Coach, profile: UserProfile, seed = 0): Week
     }
     const unique = items.filter((x, idx) => items.findIndex((y) => y.e.name.toLowerCase() === x.e.name.toLowerCase()) === idx);
     const fullBody = /^full[ -]body/i.test(template.focus);
-    const exercises = isRecovery ? unique.map((x) => x.e) : fitToTime(unique, minutes, fullBody ? 4 : 2);
+    const base = warmupMinutes(minutes, program, profile.age);
+    // Spare exercises from the coach's other days, for when this day is too short.
+    const extras: Item[] = rotate(
+      Object.entries(program.days)
+        .filter(([k]) => k !== 'recovery')
+        .flatMap(([, d]) => d.exercises)
+        .filter((t, idx, all) => all.findIndex((y) => y.name === t.name) === idx)
+        .filter((t) => t.kind !== 'conditioning' && t.kind !== 'mobility')
+        .map((t) => ({ t, e: buildExercise(t, c) })),
+      seed + i,
+    );
+    const exercises = isRecovery ? unique.map((x) => x.e) : fitToTime(unique, minutes, fullBody ? 4 : 2, base, extras, c);
 
     let warmup = profile.age >= 45 ? `${program.warmup} (take an extra 5 min)` : program.warmup;
     if (minutes < 30) warmup = '5-min quick warm-up: easy cardio + a light set of your first exercise';
@@ -488,7 +653,7 @@ export function generatePlan(coach: Coach, profile: UserProfile, seed = 0): Week
       focus: template.focus,
       warmup,
       cooldown: minutes < 30 ? '2-3 min stretch' : program.cooldown,
-      minutes: isRecovery ? 45 : estimateMinutes(exercises, warmupMinutes(minutes)),
+      minutes: isRecovery ? 45 : estimateMinutes(exercises, base),
       exercises,
     };
   });
