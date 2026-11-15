@@ -18,7 +18,7 @@ import { NutritionBlueprint } from '@/components/nutrition-blueprint';
 import { WeeklyRecapView } from '@/components/weekly-recap';
 import { getCoach } from '@/data/coaches';
 import { generatePlan, type GeneratePlanResponse } from '@/lib/api';
-import { planWarnings } from '@/lib/plan';
+import { defaultPlanDayIndex, planWarnings } from '@/lib/plan';
 import { getProfile, updateProfile } from '@/lib/profile-store';
 import { selectPlan, useSelectedPlan } from '@/lib/selected-plan';
 import {
@@ -85,7 +85,14 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
   // The saved tab already has its plan, so skip the first fetch there.
   const skipFirstFetch = useRef(!!saved);
   const [error, setError] = useState<string | null>(null);
-  const [expandedDay, setExpandedDay] = useState<number>(0);
+  // Open on today's workout (or the next one this week).
+  const [expandedDay, setExpandedDay] = useState<number>(() => (saved?.plan ? defaultPlanDayIndex(saved.plan.days) : 0));
+  // When a new plan loads, jump to today's day again (adjust state during render, not in an effect).
+  const [dayPlan, setDayPlan] = useState(plan);
+  if (plan !== dayPlan) {
+    setDayPlan(plan);
+    if (plan) setExpandedDay(defaultPlanDayIndex(plan.days));
+  }
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'routine' | 'recap'>('routine');
   const [showMapModal, setShowMapModal] = useState<boolean>(false);
@@ -150,7 +157,6 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
     if (n === daysPerWeek) return;
     setDaysPerWeek(n);
     setSeed(0);
-    setExpandedDay(0);
     updateProfile({ daysPerWeek: n });
   }
 
@@ -158,7 +164,6 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
     if (n === sessionMinutes) return;
     setSessionMinutes(n);
     setSeed(0);
-    setExpandedDay(0);
     updateProfile({ sessionMinutes: n });
   }
 

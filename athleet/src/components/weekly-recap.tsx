@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { CoachAvatar } from '@/components/coach-avatar';
 import { getCoach } from '@/data/coaches';
 import type { GeneratePlanResponse } from '@/lib/api';
+import { planDayIndexForDate, weekdayName } from '@/lib/plan';
 import {
   getLogsForWeek,
   getWeekBounds,
@@ -85,9 +86,9 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
   const progressPercent = Math.min(100, Math.round((completedCount / targetDays) * 100));
 
   // Determine which plan day corresponds to the selected day index (0..6)
-  const selectedDayOfWeekIndex = (selectedDate.getDay() + 6) % 7; // Monday = 0
-  const isScheduledDay = selectedDayOfWeekIndex < plan.days.length;
-  const plannedDay = isScheduledDay ? plan.days[selectedDayOfWeekIndex] : null;
+  // Match by weekday name, so a Mon/Wed/Fri plan shows Wednesday's workout on Wednesday.
+  const plannedDayIndex = planDayIndexForDate(plan.days, selectedDate);
+  const plannedDay = plannedDayIndex >= 0 ? plan.days[plannedDayIndex] : null;
 
   // Format week range label
   const rangeLabel = useMemo(() => {
@@ -202,7 +203,7 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
             const isSelected = isSameDay(dayDate, selectedDate);
             const dayWorkouts = weekLogs.filter((l) => isSameDay(new Date(l.finishedAt), dayDate));
             const hasCompleted = dayWorkouts.length > 0;
-            const isPlanScheduled = i < targetDays;
+            const isPlanScheduled = planDayIndexForDate(plan.days, dayDate) >= 0;
 
             return (
               <Pressable
@@ -337,11 +338,11 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
               onPress={() =>
                 router.push({
                   pathname: '/workout',
-                  params: { day: String(selectedDayOfWeekIndex) },
+                  params: { day: String(plannedDayIndex) },
                 })
               }>
               <Text style={styles.startPlannedText}>
-                ▶ Start Day {selectedDayOfWeekIndex + 1} Workout
+                {`▶ Start ${weekdayName(selectedDate)}'s Workout`}
               </Text>
             </Pressable>
           </View>

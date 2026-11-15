@@ -15,6 +15,34 @@ const WEEKDAYS: Record<number, string[]> = {
   7: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
 };
 
+/** Weekday name ("Monday"...) for a date. */
+export function weekdayName(date: Date): string {
+  return ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()];
+}
+
+/**
+ * Index of the plan day scheduled on this date, or -1 for a rest day.
+ * Matches by the day's name ("Monday"); plans without weekday names use the default schedule.
+ */
+export function planDayIndexForDate(days: { name: string }[], date: Date): number {
+  const weekday = weekdayName(date);
+  // Names look like "Monday" or "Day 2 — Wednesday".
+  const named = days.some((d) => /\b(mon|tues|wednes|thurs|fri|satur|sun)day\b/i.test(d.name));
+  if (named) return days.findIndex((d) => new RegExp(`\\b${weekday}\\b`, 'i').test(d.name));
+  return (WEEKDAYS[days.length] ?? []).indexOf(weekday);
+}
+
+/** The plan day to show first: today's workout, else the next one coming up this week. */
+export function defaultPlanDayIndex(days: { name: string }[], today = new Date()): number {
+  for (let ahead = 0; ahead < 7; ahead++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + ahead);
+    const i = planDayIndexForDate(days, d);
+    if (i >= 0) return i;
+  }
+  return 0;
+}
+
 export const MIN_DAYS = 1;
 export const MAX_DAYS = 7;
 export const MIN_MINUTES = 1;

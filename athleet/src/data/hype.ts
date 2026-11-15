@@ -10,22 +10,90 @@ export type HypeLines = {
 /**
  * Each athlete's signature line, spoken out loud after every logged set.
  * Spoken with the phone's text-to-speech (not the athlete's real voice).
- * pitch/rate tweak the delivery so each coach sounds a little different.
+ * The voice is picked to fit the athlete: a male or female voice, the closest accent the
+ * device has, and pitch/rate for their energy (Ronnie deep and loud, Bolt laid-back, etc.).
  */
-export type Signature = { text: string; pitch: number; rate: number };
+export type Signature = {
+  text: string;
+  pitch: number; // 1 = normal; lower is deeper
+  rate: number; // 1 = normal speed
+  gender: 'male' | 'female';
+  /** Accents to try first, best match first (BCP-47, e.g. 'en-US', 'en-GB'). */
+  langs: string[];
+  /** Device voices that suit this athlete, best first (iOS, Android, Chrome/Edge names). */
+  voices: string[];
+};
 
 export const SIGNATURES: Record<string, Signature> = {
-  ronnie: { text: 'YEAH BUDDY! LIGHT WEIGHT!', pitch: 0.75, rate: 1.05 },
-  lebron: { text: 'Strive for greatness!', pitch: 0.85, rate: 0.95 },
-  bolt: { text: 'To di world!', pitch: 1.0, rate: 1.1 },
-  ronaldo: { text: 'Siuuuuu!', pitch: 1.05, rate: 0.9 },
-  serena: { text: 'Come on!', pitch: 1.15, rate: 1.05 },
-  callina: { text: 'Level up! Let\'s go!', pitch: 1.25, rate: 1.1 },
-  patty: { text: "Let's get it!", pitch: 1.2, rate: 1.05 },
+  // Big, booming Texas bodybuilder.
+  ronnie: {
+    text: 'YEAH BUDDY! LIGHT WEIGHT!',
+    pitch: 0.65,
+    rate: 1.0,
+    gender: 'male',
+    langs: ['en-US'],
+    voices: ['Ralph', 'Fred', 'Evan', 'Aaron', 'Tom', 'Guy', 'David', 'en-us-x-tpd', 'en-us-x-iom'],
+  },
+  // Calm, deep, measured leader.
+  lebron: {
+    text: 'Strive for greatness!',
+    pitch: 0.8,
+    rate: 0.92,
+    gender: 'male',
+    langs: ['en-US'],
+    voices: ['Aaron', 'Evan', 'Nathan', 'Tom', 'Alex', 'Christopher', 'Guy', 'Mark', 'en-us-x-iol', 'en-us-x-tpd'],
+  },
+  // Laid-back and playful. Devices rarely have a Jamaican voice, so a Caribbean/UK one is next best.
+  bolt: {
+    text: 'To di world!',
+    pitch: 0.9,
+    rate: 0.85,
+    gender: 'male',
+    langs: ['en-JM', 'en-TT', 'en-GB', 'en-ZA', 'en-IE'],
+    voices: ['Daniel', 'Arthur', 'Oliver', 'Ryan', 'Google UK English Male', 'en-gb-x-rjs', 'en-gb-x-gbd'],
+  },
+  // Intense, stretched-out celebration.
+  ronaldo: {
+    text: 'Siuuuuuuu!',
+    pitch: 1.05,
+    rate: 0.75,
+    gender: 'male',
+    langs: ['en-US', 'en-GB'],
+    voices: ['Evan', 'Alex', 'Tom', 'Aaron', 'Guy', 'Eric', 'en-us-x-iom', 'en-us-x-iol'],
+  },
+  // Strong, confident American.
+  serena: {
+    text: 'Come on!',
+    pitch: 1.0,
+    rate: 1.0,
+    gender: 'female',
+    langs: ['en-US'],
+    voices: ['Ava', 'Allison', 'Susan', 'Samantha', 'Aria', 'Jenny', 'Zira', 'Google US English', 'en-us-x-sfg'],
+  },
+  // Young, bright, upbeat; martial arts and leg days.
+  callina: {
+    text: 'Strong legs, strong kicks! Hi-yah!',
+    pitch: 1.25,
+    rate: 1.08,
+    gender: 'female',
+    langs: ['en-US', 'en-CA'],
+    voices: ['Nicky', 'Zoe', 'Samantha', 'Ava', 'Michelle', 'Jenny', 'Aria', 'Google US English', 'en-us-x-tpc', 'en-us-x-iob'],
+  },
+  // Chill, friendly, no-nonsense.
+  patty: {
+    text: "Let's get it!",
+    pitch: 1.05,
+    rate: 1.0,
+    gender: 'female',
+    langs: ['en-US'],
+    voices: ['Allison', 'Samantha', 'Susan', 'Kathy', 'Jenny', 'Michelle', 'Zira', 'Google US English', 'en-us-x-iog', 'en-us-x-tpf'],
+  },
 };
 
 export function signatureFor(coachId: string): Signature {
-  return SIGNATURES[coachId] ?? { text: "Let's go!", pitch: 1, rate: 1 };
+  return (
+    SIGNATURES[coachId] ?? { text: "Let's go!", pitch: 1, rate: 1, gender: 'male', langs: ['en-US'], voices: [] }
+  );
 }
 
 export const HYPE: Record<string, HypeLines> = {

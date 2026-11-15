@@ -33,7 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="recap"
         options={{
-          title: 'Weekly Recap',
+          title: 'Workout Plan',
           href: selected ? ('/recap' as any) : null,
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📅</Text>,
         }}

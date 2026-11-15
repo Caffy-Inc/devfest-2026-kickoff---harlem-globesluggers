@@ -14,7 +14,7 @@ export default function RecapScreen() {
       <SafeAreaView style={styles.screen}>
         <View style={styles.empty}>
           <Text style={styles.title}>No active plan yet</Text>
-          <Text style={styles.text}>Choose a celebrity coach and select a plan to unlock your weekly recap and interactive calendar.</Text>
+          <Text style={styles.text}>Choose a celebrity coach and select a plan to unlock your workout plan and weekly calendar.</Text>
           <Pressable style={styles.btn} onPress={() => router.navigate('/coaches')} accessibilityRole="button">
             <Text style={styles.btnText}>Browse coaches</Text>
           </Pressable>
@@ -28,7 +28,7 @@ export default function RecapScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <HomeLogo />
-          <Text style={styles.headerTitle}>Weekly Recap</Text>
+          <Text style={styles.headerTitle}>Workout Plan</Text>
         </View>
         <WeeklyRecapView
           coachId={selected.coachId}
