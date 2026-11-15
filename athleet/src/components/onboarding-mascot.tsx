@@ -2,22 +2,11 @@ import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, Easing, Platform, StyleSheet, View } from 'react-native';
 
+import { frames, smoothTrack } from '@/lib/mascot-motion';
 import { mascotArt, spinBallCenter, spinBallSeam, type MascotPose } from './mascot-art';
 
 type Reaction = 'welcome' | 'encourage' | 'retry' | 'celebrate';
-const keyframes = [0, 0.12, 0.23, 0.36, 0.49, 0.62, 0.73, 0.85, 1];
-const still = keyframes.map(() => 0);
-
-// Sample smooth curves once so the same easing can run on the native Animated driver and on web.
-const samplesPerSegment = 10;
-const segments = keyframes.slice(0, -1).flatMap((start, index) => {
-  const span = keyframes[index + 1] - start;
-  return Array.from({ length: samplesPerSegment }, (_, sample) => {
-    const t = sample / samplesPerSegment;
-    return { index, span, t, time: start + t * span };
-  });
-});
-const frames = [...segments.map(({ time }) => time), 1];
+const still = Array(9).fill(0) as number[];
 
 const spinFrames = Array.from({ length: 65 }, (_, i) => i / 64);
 // Project the front half of each meridian onto the ball. At the rim it
@@ -29,22 +18,6 @@ const spinSeams = [0.125, 0.375, 0.625, 0.875].map(offset => {
     opacity: angles.map(angle => Math.max(0, Math.min(1, Math.cos(angle) * 5))),
   };
 });
-
-function smoothTrack(poses: number[]) {
-  const slopes = poses.slice(1).map((pose, i) => (pose - poses[i]) / (keyframes[i + 1] - keyframes[i]));
-  const tangents = [0, ...slopes.slice(1).map((next, i) => {
-    const previous = slopes[i];
-    // Ease to zero at a reversal or hold. Carry speed through poses moving in the same direction.
-    return previous * next > 0 ? 2 * previous * next / (previous + next) : 0;
-  }), 0];
-
-  return [...segments.map(({ index, span, t }) => {
-    const ease = t * t * (3 - 2 * t);
-    const remaining = 1 - t;
-    return poses[index] * (1 - ease) + poses[index + 1] * ease
-      + span * t * remaining * (remaining * tangents[index] - t * tangents[index + 1]);
-  }), poses[poses.length - 1]];
-}
 
 // Let the body lead, with arms, head, and props following at their own pace.
 const gestures = {

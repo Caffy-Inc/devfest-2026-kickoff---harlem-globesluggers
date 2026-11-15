@@ -1,6 +1,7 @@
-import { PlanView } from '@/components/plan-view';
+import { Redirect, useLocalSearchParams } from 'expo-router';
+import type { PlanParams } from '@/components/plan-view';
 
-// Preview of a generated plan (opened from a coach chat).
 export default function PlanScreen() {
-  return <PlanView mode="preview" />;
+  const params = useLocalSearchParams<PlanParams>();
+  return <Redirect href={{ pathname: '/chat/[id]', params: { ...params, id: params.coachId ?? 'lebron', view: 'plan' } }} />;
 }

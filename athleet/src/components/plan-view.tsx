@@ -26,7 +26,6 @@ import {
   openInAppMap,
   openNativeMap,
   SANTA_CRUZ_VENUES,
-  type TrainingVenue,
 } from '@/lib/venue-finder';
 import {
   getLogsForWeek,
@@ -35,7 +34,7 @@ import {
   useWorkoutLogs,
 } from '@/lib/workout-log';
 
-type PlanParams = {
+export type PlanParams = {
   coachId?: string;
   age?: string;
   sex?: string;
@@ -54,8 +53,10 @@ type PlanParams = {
  * - preview: opened from a coach chat, with a "Select this plan" button.
  * - saved: the "Your Plan" tab; changes are saved automatically.
  */
-export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
-  const params = useLocalSearchParams<PlanParams>();
+export function PlanView({ mode = 'preview', embedded = false, parameters, onSelected, onStartWorkout, onPlanChanged, workoutInProgress = false }: { mode?: 'preview' | 'saved'; embedded?: boolean; parameters?: PlanParams; onSelected?: () => void; onStartWorkout?: (day: number) => void; onPlanChanged?: () => void; workoutInProgress?: boolean }) {
+  const routeParams = useLocalSearchParams<PlanParams>();
+  const params = parameters ?? routeParams;
+  const Container = embedded ? View : SafeAreaView;
   const router = useRouter();
   const profile = getProfile();
   const selected = useSelectedPlan();
@@ -65,18 +66,18 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
   const coachId = saved?.coachId || params.coachId || 'lebron';
   const coach = getCoach(coachId);
 
-  const age = Number(params.age) || profile?.age || 26;
-  const sex = (params.sex as any) || profile?.sex || 'male';
-  const heightCm = Number(params.heightCm) || profile?.heightCm || 178;
-  const weightKg = Number(params.weightKg) || profile?.weightKg || 75;
-  const goal = params.goal || profile?.goal || 'build_muscle';
-  const level = (params.level as any) || profile?.level || 'intermediate';
+  const age = saved?.request?.age || Number(params.age) || profile?.age || 26;
+  const sex = saved?.request?.sex || (params.sex as any) || profile?.sex || 'male';
+  const heightCm = saved?.request?.heightCm || Number(params.heightCm) || profile?.heightCm || 178;
+  const weightKg = saved?.request?.weightKg || Number(params.weightKg) || profile?.weightKg || 75;
+  const goal = saved?.request?.goal || params.goal || profile?.goal || 'build_muscle';
+  const level = saved?.request?.level || (params.level as any) || profile?.level || 'intermediate';
   const initialDays = saved?.daysPerWeek || Number(params.daysPerWeek) || profile?.daysPerWeek || 3;
   const [daysPerWeek, setDaysPerWeek] = useState(initialDays);
   const initialMinutes = saved?.sessionMinutes || Number(params.sessionMinutes) || profile?.sessionMinutes || 60;
   const [sessionMinutes, setSessionMinutes] = useState(initialMinutes);
-  const equipment = (params.equipment as any) || profile?.equipment || 'full_gym';
-  const injuries = params.injuries || profile?.injuries || 'none';
+  const equipment = saved?.request?.equipment || (params.equipment as any) || profile?.equipment || 'full_gym';
+  const injuries = saved?.request?.injuries || params.injuries || profile?.injuries || 'none';
 
   const [plan, setPlan] = useState<GeneratePlanResponse | null>(saved?.plan ?? null);
   const [loading, setLoading] = useState(!saved);
@@ -107,7 +108,11 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
   }, [logs]);
   const weekCompletedCount = currentWeekLogs.length;
 
+  const generation = useRef(0);
+  useEffect(() => () => { generation.current++; }, []);
+
   const fetchPlan = useCallback(async (currentSeed: number) => {
+    const token = ++generation.current;
     if (currentSeed === 0) setLoading(true);
     else setRegenerating(true);
     setError(null);
@@ -128,21 +133,23 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
         },
         currentSeed
       );
+      if (token !== generation.current) return;
+      onPlanChanged?.();
       setPlan(result);
       if (mode === 'saved') {
-        selectPlan({ coachId, daysPerWeek, sessionMinutes, seed: currentSeed, plan: result });
+        selectPlan({ coachId, daysPerWeek, sessionMinutes, seed: currentSeed, plan: result, request: { coachId, age, sex, heightCm, weightKg, goal, level, daysPerWeek, sessionMinutes, equipment, injuries } });
       }
       if (currentSeed > 0) {
         setToastMessage(`Variation #${currentSeed + 1} generated!`);
         setTimeout(() => setToastMessage(null), 2500);
       }
     } catch (err: any) {
+      if (token !== generation.current) return;
       setError(err.message ?? 'Failed to generate plan');
     } finally {
-      setLoading(false);
-      setRegenerating(false);
+      if (token === generation.current) { setLoading(false); setRegenerating(false); }
     }
-  }, [mode, coachId, age, sex, heightCm, weightKg, goal, level, daysPerWeek, sessionMinutes, equipment, injuries]);
+  }, [mode, coachId, age, sex, heightCm, weightKg, goal, level, daysPerWeek, sessionMinutes, equipment, injuries, onPlanChanged]);
 
   useEffect(() => {
     if (skipFirstFetch.current) {
@@ -154,14 +161,14 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
   }, [fetchPlan]);
 
   function changeDays(n: number) {
-    if (n === daysPerWeek) return;
+    if (workoutInProgress || n === daysPerWeek) return;
     setDaysPerWeek(n);
     setSeed(0);
     updateProfile({ daysPerWeek: n });
   }
 
   function changeMinutes(n: number) {
-    if (n === sessionMinutes) return;
+    if (workoutInProgress || n === sessionMinutes) return;
     setSessionMinutes(n);
     setSeed(0);
     updateProfile({ sessionMinutes: n });
@@ -176,7 +183,8 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
 
   function handleSelect() {
     if (!plan) return;
-    selectPlan({ coachId, daysPerWeek, sessionMinutes, seed, plan });
+    selectPlan({ coachId, daysPerWeek, sessionMinutes, seed, plan, request: { coachId, age, sex, heightCm, weightKg, goal, level, daysPerWeek, sessionMinutes, equipment, injuries } });
+    if (onSelected) { onSelected(); return; }
     router.dismissAll();
     router.navigate('/my-plan');
   }
@@ -190,10 +198,10 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
   // ── Loading state ──
   if (loading) {
     return (
-      <SafeAreaView style={styles.screen}>
+      <Container style={styles.screen}>
         <View style={styles.loadingContainer}>
           <View style={styles.loadingCard}>
-            <ActivityIndicator size="large" color="#f5f5f5" />
+            <ActivityIndicator size="large" color="#ffda62" />
             <Text style={styles.loadingTitle}>
               {coach ? `Coach ${coach.name.split(' ')[0]} is crafting your routine...` : 'Building your routine...'}
             </Text>
@@ -214,14 +222,14 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
             </View>
           </View>
         </View>
-      </SafeAreaView>
+      </Container>
     );
   }
 
   // ── Error state ──
   if (error || !plan) {
     return (
-      <SafeAreaView style={styles.screen}>
+      <Container style={styles.screen}>
         <View style={styles.loadingContainer}>
           <View style={styles.errorCard}>
             <Text style={styles.errorEmoji}>⚠️</Text>
@@ -235,7 +243,7 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
             </Pressable>
           </View>
         </View>
-      </SafeAreaView>
+      </Container>
     );
   }
 
@@ -243,11 +251,11 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
   const adaptationPills = plan.notes ? plan.notes.split(' | ').filter(Boolean) : [];
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+    <Container style={styles.screen} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          {mode === 'saved' ? (
+          {mode === 'saved' || embedded ? (
             <Text style={styles.headerTitle}>Your plan</Text>
           ) : (
             <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={12}>
@@ -362,6 +370,7 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
           </Pressable>
         )}
 
+        {workoutInProgress && <Text style={styles.doneNote}>Resume and save your current workout before changing your schedule.</Text>}
         {/* Training days per week */}
         <View style={styles.daysPicker}>
           <Text style={styles.daysPickerLabel}>DAYS PER WEEK</Text>
@@ -369,6 +378,7 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
             {[1, 2, 3, 4, 5, 6, 7].map((n) => (
               <Pressable
                 key={n}
+                disabled={workoutInProgress}
                 onPress={() => changeDays(n)}
                 style={[styles.daysChip, daysPerWeek === n && styles.daysChipActive]}
                 accessibilityRole="button"
@@ -386,6 +396,7 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
             {[...new Set([20, 30, 45, 60, 90, 120, sessionMinutes])].sort((a, b) => a - b).map((n) => (
               <Pressable
                 key={n}
+                disabled={workoutInProgress}
                 onPress={() => changeMinutes(n)}
                 style={[styles.daysChip, styles.minutesChip, sessionMinutes === n && styles.daysChipActive]}
                 accessibilityRole="button"
@@ -509,7 +520,8 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
                   )}
                   <Pressable
                     style={styles.startBtn}
-                    onPress={() => router.push({ pathname: '/workout', params: { day: String(expandedDay) } })}
+                    disabled={regenerating}
+                    onPress={() => onStartWorkout ? onStartWorkout(expandedDay) : router.push({ pathname: '/workout', params: { day: String(expandedDay) } })}
                     accessibilityRole="button"
                     accessibilityLabel={`Start day ${expandedDay + 1} workout`}>
                     <Text style={styles.startText}>
@@ -620,12 +632,12 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
           <Pressable
             style={[styles.regenerateBtn, regenerating && styles.regenerateBtnActive]}
             onPress={handleRegenerate}
-            disabled={regenerating}
+            disabled={regenerating || workoutInProgress}
             accessibilityRole="button"
           >
             {regenerating ? (
               <View style={styles.row}>
-                <ActivityIndicator size="small" color="#f5f5f5" />
+                <ActivityIndicator size="small" color="#ffda62" />
                 <Text style={styles.regenerateText}>  Generating Variation...</Text>
               </View>
             ) : (
@@ -633,13 +645,13 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
             )}
           </Pressable>
 
-          <Pressable
+          {!embedded && <Pressable
             style={styles.chatBtn}
             onPress={() => router.push({ pathname: '/chat/[id]' as any, params: { id: coachId } })}
             accessibilityRole="button"
           >
             <Text style={styles.chatBtnText}>💬  Chat with {coach?.name.split(' ')[0]}</Text>
-          </Pressable>
+          </Pressable>}
         </View>
 
           <Text style={styles.disclaimer}>
@@ -777,34 +789,34 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
           </ScrollView>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </Container>
   );
 }
 
 const styles = StyleSheet.create({
   startWrap: { marginTop: 16, gap: 8 },
-  startBtn: { backgroundColor: '#f5f5f5', borderRadius: 10, paddingVertical: 16, alignItems: 'center' },
-  startText: { color: '#0d0d0f', fontSize: 16, fontWeight: '800' },
+  startBtn: { backgroundColor: '#ffda62', borderRadius: 10, paddingVertical: 16, alignItems: 'center' },
+  startText: { color: '#14130f', fontSize: 16, fontWeight: '800' },
   doneNote: { color: '#b8f0c6', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#f5f5f5' },
-  selectBtn: { backgroundColor: '#f5f5f5', borderRadius: 10, paddingVertical: 18, alignItems: 'center' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: '#ffda62' },
+  selectBtn: { backgroundColor: '#ffda62', borderRadius: 10, paddingVertical: 18, alignItems: 'center' },
   selectBtnDone: { backgroundColor: '#1f3a26', borderWidth: 1, borderColor: '#3d7a4e' },
-  selectText: { color: '#0d0d0f', fontSize: 17, fontWeight: '800' },
+  selectText: { color: '#14130f', fontSize: 17, fontWeight: '800' },
   selectTextDone: { color: '#b8f0c6' },
   daysPicker: { marginTop: 16, gap: 8 },
-  daysPickerLabel: { color: '#8a8a90', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  daysPickerLabel: { color: '#b5ad94', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
   daysPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   minutesChip: { width: 'auto', minWidth: 40, paddingHorizontal: 8 },
   warnCard: { borderRadius: 8, borderWidth: 1, padding: 14, marginTop: 12, gap: 4 },
   warnLow: { backgroundColor: '#2a2410', borderColor: '#6b5a1e' },
   warnHigh: { backgroundColor: '#2e1616', borderColor: '#7a2e2e' },
-  warnTitle: { color: '#f5f5f5', fontSize: 14, fontWeight: '700' },
+  warnTitle: { color: '#ffda62', fontSize: 14, fontWeight: '700' },
   warnText: { color: '#d0d0d5', fontSize: 13, lineHeight: 19 },
-  daysChip: { flexGrow: 1, minWidth: 38, height: 36, borderRadius: 8, borderWidth: 1, borderColor: '#3a3a40', backgroundColor: '#1a1a1d', alignItems: 'center', justifyContent: 'center' },
-  daysChipActive: { backgroundColor: '#f5f5f5', borderColor: '#f5f5f5' },
+  daysChip: { flexGrow: 1, minWidth: 38, height: 36, borderRadius: 8, borderWidth: 1, borderColor: '#50462b', backgroundColor: '#211f18', alignItems: 'center', justifyContent: 'center' },
+  daysChipActive: { backgroundColor: '#ffda62', borderColor: '#ffda62' },
   daysChipText: { color: '#d0d0d5', fontSize: 15, fontWeight: '700' },
-  daysChipTextActive: { color: '#0d0d0f' },
-  screen: { flex: 1, backgroundColor: '#0d0d0f' },
+  daysChipTextActive: { color: '#14130f' },
+  screen: { flex: 1, backgroundColor: '#14130f' },
   content: {
     width: '100%',
     maxWidth: 560,
@@ -818,50 +830,50 @@ const styles = StyleSheet.create({
   header: {
     paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2e',
+    borderBottomColor: '#393222',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerBack: { fontSize: 15, color: '#a0a0a6' },
+  headerBack: { fontSize: 15, color: '#c9bea3' },
   headerLogo: { width: 96, height: 30 },
 
   // Toast
   toastBanner: {
-    backgroundColor: '#2a2a2e',
+    backgroundColor: '#393222',
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
     marginTop: 12,
     borderLeftWidth: 3,
-    borderLeftColor: '#f5f5f5',
+    borderLeftColor: '#ffda62',
   },
-  toastText: { color: '#f5f5f5', fontSize: 13, fontWeight: '600' },
+  toastText: { color: '#ffda62', fontSize: 13, fontWeight: '600' },
 
   // Loading
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   loadingCard: {
-    backgroundColor: '#1a1a1d',
+    backgroundColor: '#211f18',
     borderWidth: 1,
-    borderColor: '#2a2a2e',
+    borderColor: '#393222',
     borderRadius: 16,
     padding: 36,
     alignItems: 'center',
     width: '100%',
     maxWidth: 380,
   },
-  loadingTitle: { fontSize: 18, fontWeight: '700', color: '#f5f5f5', marginTop: 20, textAlign: 'center' },
-  loadingSubtitle: { fontSize: 14, color: '#8a8a90', marginTop: 6, textAlign: 'center' },
+  loadingTitle: { fontSize: 18, fontWeight: '700', color: '#ffda62', marginTop: 20, textAlign: 'center' },
+  loadingSubtitle: { fontSize: 14, color: '#b5ad94', marginTop: 6, textAlign: 'center' },
   loadingDots: { marginTop: 24, gap: 10, alignSelf: 'stretch' },
   loadingStep: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  loadingStepDot: { fontSize: 8, color: '#f5f5f5' },
-  loadingStepText: { fontSize: 13, color: '#a0a0a6' },
+  loadingStepDot: { fontSize: 8, color: '#ffda62' },
+  loadingStepText: { fontSize: 13, color: '#c9bea3' },
 
   // Error
   errorCard: {
-    backgroundColor: '#1a1a1d',
+    backgroundColor: '#211f18',
     borderWidth: 1,
-    borderColor: '#2a2a2e',
+    borderColor: '#393222',
     borderRadius: 16,
     padding: 36,
     alignItems: 'center',
@@ -869,52 +881,52 @@ const styles = StyleSheet.create({
     maxWidth: 360,
   },
   errorEmoji: { fontSize: 40 },
-  errorTitle: { fontSize: 18, fontWeight: '700', color: '#f5f5f5', marginTop: 16 },
-  errorMessage: { fontSize: 14, color: '#8a8a90', marginTop: 8, textAlign: 'center' },
+  errorTitle: { fontSize: 18, fontWeight: '700', color: '#ffda62', marginTop: 16 },
+  errorMessage: { fontSize: 14, color: '#b5ad94', marginTop: 8, textAlign: 'center' },
   retryBtn: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ffda62',
     borderRadius: 8,
     paddingHorizontal: 32,
     paddingVertical: 14,
     marginTop: 24,
   },
-  retryText: { color: '#0d0d0f', fontWeight: '700', fontSize: 15 },
+  retryText: { color: '#14130f', fontWeight: '700', fontSize: 15 },
   backLink: { marginTop: 16 },
-  backLinkText: { color: '#8a8a90', fontSize: 14 },
+  backLinkText: { color: '#b5ad94', fontSize: 14 },
 
   // Quote card
   quoteCard: {
-    backgroundColor: '#1a1a1d',
+    backgroundColor: '#211f18',
     borderWidth: 1,
-    borderColor: '#2a2a2e',
+    borderColor: '#393222',
     borderRadius: 12,
     padding: 18,
     marginTop: 16,
   },
   quoteCoach: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  quoteCoachName: { color: '#f5f5f5', fontSize: 16, fontWeight: '700' },
-  quoteCoachSub: { color: '#8a8a90', fontSize: 12, marginTop: 2 },
+  quoteCoachName: { color: '#ffda62', fontSize: 16, fontWeight: '700' },
+  quoteCoachSub: { color: '#b5ad94', fontSize: 12, marginTop: 2 },
   quoteText: { color: '#e0e0e5', fontSize: 15, lineHeight: 22, fontStyle: 'italic' },
   variationBadge: {
-    backgroundColor: '#2a2a2e',
+    backgroundColor: '#393222',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
-  variationBadgeText: { color: '#a0a0a6', fontSize: 11, fontWeight: '700' },
+  variationBadgeText: { color: '#c9bea3', fontSize: 11, fontWeight: '700' },
 
   // Baseline Box
   baselineBox: {
     backgroundColor: '#141416',
     borderWidth: 1,
-    borderColor: '#2a2a2e',
+    borderColor: '#393222',
     borderRadius: 10,
     padding: 14,
     marginTop: 12,
   },
-  baselineHeader: { fontSize: 11, fontWeight: '800', color: '#8a8a90', letterSpacing: 1 },
-  baselineSub: { fontSize: 13, color: '#a0a0a6', marginTop: 4 },
-  baselineHighlight: { color: '#f5f5f5', fontWeight: '600' },
+  baselineHeader: { fontSize: 11, fontWeight: '800', color: '#b5ad94', letterSpacing: 1 },
+  baselineSub: { fontSize: 13, color: '#c9bea3', marginTop: 4 },
+  baselineHighlight: { color: '#ffda62', fontWeight: '600' },
   pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 10 },
   adaptationPill: {
     backgroundColor: '#1f1f23',
@@ -933,30 +945,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#1a1a1d',
+    backgroundColor: '#211f18',
     borderWidth: 1,
-    borderColor: '#2a2a2e',
+    borderColor: '#393222',
   },
-  dayTabActive: { backgroundColor: '#f5f5f5', borderColor: '#f5f5f5' },
-  dayTabText: { fontSize: 13, fontWeight: '600', color: '#8a8a90' },
-  dayTabTextActive: { color: '#0d0d0f' },
+  dayTabActive: { backgroundColor: '#ffda62', borderColor: '#ffda62' },
+  dayTabText: { fontSize: 13, fontWeight: '600', color: '#b5ad94' },
+  dayTabTextActive: { color: '#14130f' },
 
   // Day card
   dayCard: {
-    backgroundColor: '#1a1a1d',
+    backgroundColor: '#211f18',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#2a2a2e',
+    borderColor: '#393222',
     marginTop: 16,
     overflow: 'hidden',
   },
   dayHeader: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2e',
+    borderBottomColor: '#393222',
   },
-  dayTitle: { fontSize: 18, fontWeight: '700', color: '#f5f5f5' },
-  dayFocus: { fontSize: 14, color: '#a0a0a6', marginTop: 2 },
+  dayTitle: { fontSize: 18, fontWeight: '700', color: '#ffda62' },
+  dayFocus: { fontSize: 14, color: '#c9bea3', marginTop: 2 },
   dayMeta: { fontSize: 12, color: '#6b6b72', marginTop: 4 },
 
   // Phase blocks
@@ -964,28 +976,28 @@ const styles = StyleSheet.create({
     padding: 14,
     backgroundColor: '#141416',
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2e',
+    borderBottomColor: '#393222',
   },
-  phaseLabel: { fontSize: 11, fontWeight: '700', color: '#8a8a90', letterSpacing: 1, marginBottom: 4 },
+  phaseLabel: { fontSize: 11, fontWeight: '700', color: '#b5ad94', letterSpacing: 1, marginBottom: 4 },
   phaseText: { fontSize: 14, color: '#c0c0c5', lineHeight: 20 },
 
   // Exercise card
   exerciseCard: {
     padding: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2e',
+    borderBottomColor: '#393222',
   },
   exerciseHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   exerciseNumber: {
-    backgroundColor: '#2a2a2e',
+    backgroundColor: '#393222',
     width: 26,
     height: 26,
     borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  exerciseNumberText: { color: '#f5f5f5', fontSize: 12, fontWeight: '700' },
-  exerciseName: { fontSize: 16, fontWeight: '600', color: '#f5f5f5', flex: 1 },
+  exerciseNumberText: { color: '#ffda62', fontSize: 12, fontWeight: '700' },
+  exerciseName: { fontSize: 16, fontWeight: '600', color: '#ffda62', flex: 1 },
 
   exerciseStats: {
     flexDirection: 'row',
@@ -996,14 +1008,14 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   stat: { flex: 1, alignItems: 'center' },
-  statLabel: { fontSize: 10, color: '#8a8a90', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  statValue: { fontSize: 15, fontWeight: '700', color: '#f5f5f5', marginTop: 2 },
-  statDivider: { width: 1, height: 26, backgroundColor: '#2a2a2e' },
+  statLabel: { fontSize: 10, color: '#b5ad94', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statValue: { fontSize: 15, fontWeight: '700', color: '#ffda62', marginTop: 2 },
+  statDivider: { width: 1, height: 26, backgroundColor: '#393222' },
 
-  exerciseNotes: { fontSize: 13, color: '#a0a0a6', marginTop: 8, fontStyle: 'italic' },
+  exerciseNotes: { fontSize: 13, color: '#c9bea3', marginTop: 8, fontStyle: 'italic' },
   muscleTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 8 },
   muscleTag: {
-    backgroundColor: '#2a2a2e',
+    backgroundColor: '#393222',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
@@ -1012,15 +1024,15 @@ const styles = StyleSheet.create({
 
   // Info cards
   infoCard: {
-    backgroundColor: '#1a1a1d',
+    backgroundColor: '#211f18',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#2a2a2e',
+    borderColor: '#393222',
     padding: 16,
     marginTop: 16,
   },
-  infoTitle: { fontSize: 16, fontWeight: '700', color: '#f5f5f5', marginBottom: 8 },
-  infoSummary: { fontSize: 14, color: '#a0a0a6', lineHeight: 20, marginBottom: 8 },
+  infoTitle: { fontSize: 16, fontWeight: '700', color: '#ffda62', marginBottom: 8 },
+  infoSummary: { fontSize: 14, color: '#c9bea3', lineHeight: 20, marginBottom: 8 },
   tipRow: { flexDirection: 'row', gap: 6, marginTop: 4 },
   tipBullet: { fontSize: 14, color: '#6b6b72' },
   tipText: { fontSize: 14, color: '#c0c0c5', flex: 1, lineHeight: 20 },
@@ -1031,23 +1043,22 @@ const styles = StyleSheet.create({
   actions: { marginTop: 24, gap: 10 },
   regenerateBtn: {
     borderWidth: 1,
-    borderColor: '#3a3a40',
+    borderColor: '#50462b',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
-    backgroundColor: '#1a1a1d',
+    backgroundColor: '#211f18',
   },
   regenerateBtnActive: { opacity: 0.8 },
-  regenerateText: { color: '#f5f5f5', fontWeight: '600', fontSize: 15 },
+  regenerateText: { color: '#ffda62', fontWeight: '600', fontSize: 15 },
   chatBtn: {
     borderWidth: 1,
-    borderColor: '#3a3a40',
+    borderColor: '#50462b',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
-    backgroundColor: '#1a1a1d',
+    backgroundColor: '#211f18',
   },
-  chatBtnText: { color: '#f5f5f5', fontWeight: '600', fontSize: 15 },
 
   // Sub-tab switcher (Routine vs Weekly Recap)
   subTabBar: {
@@ -1293,4 +1304,5 @@ const styles = StyleSheet.create({
     borderColor: '#3a3a40',
   },
   openNativeActionText: { color: '#f5f5f5', fontSize: 13, fontWeight: '700' },
+  chatBtnText: { color: '#ffda62', fontWeight: '600', fontSize: 15 },
 });

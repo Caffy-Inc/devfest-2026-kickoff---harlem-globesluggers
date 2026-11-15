@@ -125,6 +125,19 @@ function pitchFor(sig: Signature, confirmed: boolean): number {
 const withTimeout = (p: Promise<void>, ms: number) =>
   Promise.race([p, new Promise<void>((resolve) => setTimeout(resolve, ms))]);
 
+/** Voice settings shared by signature shouts and animated coach speech. */
+export async function coachVoiceOptions(coachId: string) {
+  const sig = signatureFor(coachId);
+  if (!voices.length) await withTimeout(loadVoices(), 1200);
+  const { voice, confirmed } = voiceFor(coachId, sig);
+  return {
+    pitch: pitchFor(sig, confirmed),
+    rate: sig.rate,
+    language: voice?.language ?? sig.langs[0] ?? 'en-US',
+    ...(voice ? { voice: voice.identifier } : {}),
+  };
+}
+
 /** Shouts the coach's signature line (text-to-speech). */
 export async function shoutSignature(coachId: string) {
   if (muted) return;

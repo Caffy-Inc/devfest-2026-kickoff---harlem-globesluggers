@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { Text } from 'react-native';
 
 import { useSelectedPlan } from '@/lib/selected-plan';
@@ -23,6 +23,11 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="my-plan"
+        listeners={{ tabPress: event => {
+          if (!selected) return;
+          event.preventDefault();
+          router.navigate({ pathname: '/chat/[id]', params: { id: selected.coachId, view: 'plan' } });
+        } }}
         options={{
           title: 'Your Plan',
           // Only shows up once a plan has been selected.

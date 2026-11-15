@@ -1,8 +1,7 @@
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PlanView } from '@/components/plan-view';
 import { useSelectedPlan } from '@/lib/selected-plan';
 
 export default function MyPlanScreen() {
@@ -12,7 +11,7 @@ export default function MyPlanScreen() {
       <SafeAreaView style={styles.screen}>
         <View style={styles.empty}>
           <Text style={styles.title}>No plan yet</Text>
-          <Text style={styles.text}>Open a coach, tap Plan, then “Select this plan”.</Text>
+          <Text style={styles.text}>Build your plan with a coach, then train together one set at a time.</Text>
           <Pressable style={styles.btn} onPress={() => router.navigate('/coaches')} accessibilityRole="button">
             <Text style={styles.btnText}>Browse coaches</Text>
           </Pressable>
@@ -21,7 +20,7 @@ export default function MyPlanScreen() {
     );
   }
   // key: rebuild the view when a different plan is selected from another screen.
-  return <PlanView key={`${selected.coachId}`} mode="saved" />;
+  return <Redirect href={{ pathname: '/chat/[id]', params: { id: selected.coachId, view: 'plan' } }} />;
 }
 
 const styles = StyleSheet.create({

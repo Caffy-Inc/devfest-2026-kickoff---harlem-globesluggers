@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
 
-import type { GeneratePlanResponse } from '@/lib/api';
+import type { GeneratePlanResponse, GeneratePlanRequest } from '@/lib/api';
 
 // The plan the user chose with "Select this plan". Saved on the device (phone storage on
 // iOS/Android, localStorage on web) so it survives app reloads and dev-server restarts.
@@ -11,6 +11,7 @@ export type SelectedPlan = {
   sessionMinutes: number;
   seed: number;
   plan: GeneratePlanResponse;
+  request?: GeneratePlanRequest;
 };
 
 const STORAGE_KEY = 'athleet_selected_plan_v1';

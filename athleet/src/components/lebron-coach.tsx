@@ -1,0 +1,110 @@
+import { Image } from 'expo-image';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { AccessibilityInfo, Animated, AppState, Platform, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { sampleSpeech, emptySpeechAnimation, type SpeechAnimation } from '@/lib/speech-animation';
+import { coachPose, easeInOut, type CoachMotion, type CoachPose } from '@/lib/lebron-motion';
+import { lebronArt } from './lebron-art';
+
+const restingSpeech = sampleSpeech(emptySpeechAnimation(), 0);
+const neutral = coachPose(0, 'idle', true, restingSpeech);
+const poseKeys = Object.keys(neutral) as (keyof CoachPose)[];
+const status = { idle: 'READY WHEN YOU ARE', talking: 'COACH IS SPEAKING', exercise: 'MOVEMENT DEMO · SQUAT', celebrate: 'LET’S GO!', thinking: 'THINKING…' };
+
+export function LeBronCoach({ motion, speechAnimation, compact = false }: { compact?: boolean; motion: CoachMotion; speechAnimation: RefObject<SpeechAnimation> }) {
+  const current = useRef(motion);
+  useEffect(() => { current.current = motion; }, [motion]);
+  const [focused, setFocused] = useState(true);
+  const [foreground, setForeground] = useState(AppState.currentState !== 'background');
+  const [reduced, setReduced] = useState(true);
+  const [values] = useState(() => Object.fromEntries(poseKeys.map(key => [key, new Animated.Value(neutral[key])])) as Record<keyof CoachPose, Animated.Value>);
+  const pose = useRef(neutral);
+  useFocusEffect(useCallback(() => { setFocused(true); return () => setFocused(false); }, []));
+  useEffect(() => {
+    const app = AppState.addEventListener('change', state => setForeground(state === 'active'));
+    return () => app.remove();
+  }, []);
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const sync = () => setReduced(preference.matches);
+      sync(); preference.addEventListener('change', sync);
+      return () => preference.removeEventListener('change', sync);
+    }
+    let active = true;
+    let changed = false;
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', value => { changed = true; setReduced(value); });
+    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (active && !changed) setReduced(value); }).catch(() => {});
+    return () => { active = false; subscription.remove(); };
+  }, []);
+  useEffect(() => {
+    if (!focused || !foreground) return;
+    let frame = 0;
+    let previous = 0;
+    let start = 0;
+    let transitionStart = 0;
+    let state = current.current;
+    let from = { ...pose.current };
+    const render = (now: number) => {
+      frame = requestAnimationFrame(render);
+      if (now - previous < 1000 / 30) return;
+      const dt = previous ? Math.min(.05, (now - previous) / 1000) : 1 / 30;
+      previous = now;
+      if (!start) { start = now; transitionStart = now; }
+      if (state !== current.current) {
+        state = current.current; start = now; transitionStart = now; from = { ...pose.current };
+      }
+      const target = coachPose((now - start) / 1000, state, reduced, sampleSpeech(speechAnimation.current, Date.now()));
+      const blend = reduced ? 1 : easeInOut((now - transitionStart) / 450);
+      for (const key of poseKeys) {
+        // Keep word boundaries responsive, while softly settling lips between syllables.
+        const facial = key === 'mouth' || key === 'width' || key === 'brow';
+        const value = facial ? pose.current[key] + (target[key] - pose.current[key]) * (1 - Math.exp(-dt * 22)) : from[key] + (target[key] - from[key]) * blend;
+        pose.current[key] = value;
+        values[key].setValue(value);
+      }
+    };
+    frame = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(frame);
+  }, [focused, foreground, reduced, speechAnimation, values]);
+  const size = compact ? 172 : 278;
+  const rotate = (value: Animated.Value, direction = 1) => value.interpolate({ inputRange: [-180, 180], outputRange: [`${-180 * direction}deg`, `${180 * direction}deg`] });
+  const art = (name: keyof typeof lebronArt) => <Image source={lebronArt[name]} style={styles.image} contentFit="contain" accessible={false} />;
+  return (
+    <View style={[styles.stage, { height: compact ? 190 : 300 }]} accessible accessibilityLabel={`Illustrated LeBron coach, ${motion}`}>
+      <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ width: size, height: size }}>
+        {art('floor')}
+        <Animated.View style={[styles.layer, { transform: [{ translateY: Animated.multiply(values.body, size / 320) }] }]}>
+          {(['left', 'right'] as const).map((side, i) => {
+            const x = (i === 0 ? 137 : 183) / 320 * 100;
+            const direction = i === 0 ? 1 : -1;
+            return <Animated.View key={side} style={[styles.layer, { transformOrigin: `${x}% 76.25%`, transform: [{ rotate: rotate(values.knee, direction) }] }]}>
+              {art(side === 'left' ? 'leftThigh' : 'rightThigh')}
+              <Animated.View style={[styles.layer, { transformOrigin: `${x}% 85%`, transform: [{ rotate: rotate(values.knee, -2 * direction) }] }]}>
+                {art(side === 'left' ? 'leftShin' : 'rightShin')}
+                <Animated.View style={[styles.layer, { transformOrigin: `${x}% 93.75%`, transform: [{ rotate: rotate(values.knee, direction) }] }]}>{art(side === 'left' ? 'leftShoe' : 'rightShoe')}</Animated.View>
+              </Animated.View>
+            </Animated.View>;
+          })}
+          <Animated.View style={[styles.layer, { transformOrigin: '35% 56.5%', transform: [{ rotate: rotate(values.left) }] }]}>{art('left')}</Animated.View>
+          <Animated.View style={[styles.layer, { transformOrigin: '65% 56.5%', transform: [{ rotate: rotate(values.right) }] }]}>{art('right')}</Animated.View>
+          {art('body')}
+          <Animated.View style={[styles.layer, { transformOrigin: '50% 55%', transform: [{ rotate: rotate(values.head) }] }]}>
+            {art('head')}
+            <Animated.View style={[styles.layer, { transformOrigin: '50% 36.5%', transform: [{ scaleY: values.eyes }] }]}>{art('eyes')}</Animated.View>
+            <Animated.View style={[styles.layer, { transform: [{ translateY: Animated.multiply(values.brow, size / 320) }] }]}>{art('brows')}</Animated.View>
+            <Animated.View style={[styles.layer, { transformOrigin: '50% 50%', transform: [{ scaleY: values.mouth }, { scaleX: values.width }] }]}>{art('mouth')}</Animated.View>
+          </Animated.View>
+        </Animated.View>
+        <Animated.View style={[styles.layer, { opacity: values.confetti, transform: [{ translateY: Animated.multiply(values.body, size / 640) }] }]}>{art('confetti')}</Animated.View>
+      </View>
+      <Text style={styles.status}>{status[motion]}</Text>
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  stage: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  layer: { ...StyleSheet.absoluteFill },
+  image: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
+  status: { color: '#ffd65a', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginTop: 2 },
+});
