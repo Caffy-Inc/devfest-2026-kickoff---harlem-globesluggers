@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { HomeLogo } from '@/components/home-logo';
+import { ResetOnboarding } from '@/components/reset-onboarding';
 import { OnboardingMascot } from '@/components/onboarding-mascot';
 import { useSelectedPlan } from '@/lib/selected-plan';
 
@@ -35,6 +36,7 @@ export default function HomeScreen() {
             <Text style={styles.buttonText}>Start a new plan  →</Text>
           </Pressable>
         </View>
+        <ResetOnboarding />
       </ScrollView>
     </SafeAreaView>
   );

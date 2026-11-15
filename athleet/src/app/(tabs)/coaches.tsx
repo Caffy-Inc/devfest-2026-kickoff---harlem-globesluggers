@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomeLogo } from '@/components/home-logo';
+import { ResetOnboarding } from '@/components/reset-onboarding';
 import { CoachCard } from '@/components/coach-card';
 import { StreakBadge } from '@/components/streak-badge';
 import { COACHES } from '@/data/coaches';
@@ -41,6 +42,7 @@ export default function CoachesScreen() {
           </Pressable>
         </View>
 
+        <ResetOnboarding />
         <StreakBadge />
         <View style={styles.spacer} />
 
