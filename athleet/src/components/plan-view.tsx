@@ -534,8 +534,8 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
           </View>
         )}
 
-        {/* Nutrition Blueprint (the saved plan shows it in the "Your Meals" tab) */}
-        {mode === 'preview' && (
+        {/* Nutrition Blueprint (the saved plan shows it in the "Your Meals" tab; the coach session has no tab bar, so show it inline there) */}
+        {(mode === 'preview' || embedded) && (
           <NutritionBlueprint
             summary={plan.nutrition.summary}
             tips={plan.nutrition.tips}

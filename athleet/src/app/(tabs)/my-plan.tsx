@@ -1,7 +1,8 @@
-import { Redirect, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { PlanView } from '@/components/plan-view';
 import { useSelectedPlan } from '@/lib/selected-plan';
 
 export default function MyPlanScreen() {
@@ -20,7 +21,14 @@ export default function MyPlanScreen() {
     );
   }
   // key: rebuild the view when a different plan is selected from another screen.
-  return <Redirect href={{ pathname: '/chat/[id]', params: { id: selected.coachId, view: 'plan' } }} />;
+  // Stay inside the tabs so Workout Plan and Your Meals remain reachable; workouts still open with the coach.
+  return (
+    <PlanView
+      key={`${selected.coachId}`}
+      mode="saved"
+      onStartWorkout={day => router.push({ pathname: '/chat/[id]', params: { id: selected.coachId, view: 'workout', day: String(day) } })}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
