@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,12 +14,25 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { HomeLogo } from '@/components/home-logo';
 import { CoachAvatar } from '@/components/coach-avatar';
 import { NutritionBlueprint } from '@/components/nutrition-blueprint';
+import { WeeklyRecapView } from '@/components/weekly-recap';
 import { getCoach } from '@/data/coaches';
 import { generatePlan, type GeneratePlanResponse } from '@/lib/api';
 import { planWarnings } from '@/lib/plan';
 import { getProfile, updateProfile } from '@/lib/profile-store';
 import { selectPlan, useSelectedPlan } from '@/lib/selected-plan';
-import { lastLogForDay, useWorkoutLogs } from '@/lib/workout-log';
+import {
+  getRecommendedVenues,
+  openInAppMap,
+  openNativeMap,
+  SANTA_CRUZ_VENUES,
+  type TrainingVenue,
+} from '@/lib/venue-finder';
+import {
+  getLogsForWeek,
+  getWeekBounds,
+  lastLogForDay,
+  useWorkoutLogs,
+} from '@/lib/workout-log';
 
 type PlanParams = {
   coachId?: string;
@@ -72,6 +86,18 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
   const [error, setError] = useState<string | null>(null);
   const [expandedDay, setExpandedDay] = useState<number>(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'routine' | 'recap'>('routine');
+  const [showMapModal, setShowMapModal] = useState<boolean>(false);
+  const [selectedVenueId, setSelectedVenueId] = useState<string>(SANTA_CRUZ_VENUES[0].id);
+
+  const selectedVenue =
+    SANTA_CRUZ_VENUES.find((v) => v.id === selectedVenueId) || SANTA_CRUZ_VENUES[0];
+
+  const currentWeekLogs = useMemo(() => {
+    const { start, end } = getWeekBounds();
+    return getLogsForWeek(logs, start, end);
+  }, [logs]);
+  const weekCompletedCount = currentWeekLogs.length;
 
   const fetchPlan = useCallback(async (currentSeed: number) => {
     if (currentSeed === 0) setLoading(true);
@@ -225,31 +251,63 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
           <HomeLogo style={styles.headerLogo} />
         </View>
 
-        {/* Feedback notification toast */}
-        {toastMessage && (
-          <View style={styles.toastBanner}>
-            <Text style={styles.toastText}>⚡ {toastMessage}</Text>
+        {/* Main Sub-Tab Switcher: Routine vs Weekly Recap */}
+        {mode === 'saved' && (
+          <View style={styles.subTabBar}>
+            <Pressable
+              style={[styles.subTabBtn, activeTab === 'routine' && styles.subTabBtnActive]}
+              onPress={() => setActiveTab('routine')}
+              accessibilityRole="tab"
+              accessibilityLabel="Workout Routine tab">
+              <Text style={[styles.subTabText, activeTab === 'routine' && styles.subTabTextActive]}>
+                📋 Workout Routine
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.subTabBtn, activeTab === 'recap' && styles.subTabBtnActive]}
+              onPress={() => setActiveTab('recap')}
+              accessibilityRole="tab"
+              accessibilityLabel="Weekly Recap & Calendar tab">
+              <Text style={[styles.subTabText, activeTab === 'recap' && styles.subTabTextActive]}>
+                📅 Weekly Recap {weekCompletedCount > 0 ? `(${weekCompletedCount})` : ''}
+              </Text>
+            </Pressable>
           </View>
         )}
 
-        {/* Coach Header banner */}
-        <View style={styles.quoteCard}>
-          {coach && (
-            <View style={styles.quoteCoach}>
-              <CoachAvatar coach={coach} size={44} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.quoteCoachName}>Coach {coach.name}</Text>
-                <Text style={styles.quoteCoachSub}>{coach.category} • Authentic Athlete Routine</Text>
+        {activeTab === 'recap' ? (
+          <WeeklyRecapView
+            coachId={coachId}
+            plan={plan}
+            daysPerWeek={daysPerWeek}
+          />
+        ) : (
+          <>
+            {/* Feedback notification toast */}
+            {toastMessage && (
+              <View style={styles.toastBanner}>
+                <Text style={styles.toastText}>⚡ {toastMessage}</Text>
               </View>
-              {seed > 0 && (
-                <View style={styles.variationBadge}>
-                  <Text style={styles.variationBadgeText}>Var #{seed + 1}</Text>
+            )}
+
+            {/* Coach Header banner */}
+            <View style={styles.quoteCard}>
+              {coach && (
+                <View style={styles.quoteCoach}>
+                  <CoachAvatar coach={coach} size={44} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.quoteCoachName}>Coach {coach.name}</Text>
+                    <Text style={styles.quoteCoachSub}>{coach.category} • Authentic Athlete Routine</Text>
+                  </View>
+                  {seed > 0 && (
+                    <View style={styles.variationBadge}>
+                      <Text style={styles.variationBadgeText}>Var #{seed + 1}</Text>
+                    </View>
+                  )}
                 </View>
               )}
+              <Text style={styles.quoteText}>{`"${quote}"`}</Text>
             </View>
-          )}
-          <Text style={styles.quoteText}>{`"${quote}"`}</Text>
-        </View>
 
         {/* Baseline Personalization Badges */}
         <View style={styles.baselineBox}>
@@ -276,6 +334,25 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
             </View>
           )}
         </View>
+
+        {/* Mini weekly recap progress banner */}
+        {mode === 'saved' && (
+          <Pressable
+            style={styles.miniRecapBanner}
+            onPress={() => setActiveTab('recap')}
+            accessibilityRole="button"
+            accessibilityLabel="Open weekly recap and calendar">
+            <View style={styles.miniRecapLeft}>
+              <Text style={styles.miniRecapTitle}>
+                ⚡ This Week: {weekCompletedCount} of {daysPerWeek} Completed
+              </Text>
+              <Text style={styles.miniRecapSub}>
+                Tap to inspect clickable calendar & set log history
+              </Text>
+            </View>
+            <Text style={styles.miniRecapArrow}>➔</Text>
+          </Pressable>
+        )}
 
         {/* Training days per week */}
         <View style={styles.daysPicker}>
@@ -445,6 +522,55 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
           mealPlan={plan.nutrition.mealPlan}
         />
 
+        {/* Santa Cruz Location-Based Map Integration */}
+        <View style={styles.venueCard}>
+          <View style={styles.venueHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.venueTitle}>📍 Where to Train (Santa Cruz)</Text>
+              <Text style={styles.venueSub}>Equipment-matched facilities near you</Text>
+            </View>
+            <Pressable
+              style={styles.exploreMapBtn}
+              onPress={() => setShowMapModal(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Open interactive Santa Cruz training map">
+              <Text style={styles.exploreMapBtnText}>🗺️ Interactive Map</Text>
+            </Pressable>
+          </View>
+          {getRecommendedVenues(coachId, equipment).map((venue) => (
+            <View key={venue.id} style={styles.venueItem}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.venueName}>{venue.name} <Text style={styles.venueDistance}>• {venue.distance}</Text></Text>
+                <Text style={styles.venueAddress}>{venue.address}</Text>
+                <Text style={styles.venueWhy}>💡 {venue.recommendedFor}</Text>
+                <View style={styles.venueTagsRow}>
+                  {venue.equipmentTags.map((tag) => (
+                    <View key={tag} style={styles.venueTag}>
+                      <Text style={styles.venueTagText}>{tag}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              <View style={styles.venueBtnCol}>
+                <Pressable
+                  style={styles.inAppMapBtn}
+                  onPress={() => openInAppMap(venue)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${venue.name} in-app map`}>
+                  <Text style={styles.inAppMapText}>🗺️ In-App</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.nativeMapBtn}
+                  onPress={() => openNativeMap(venue)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${venue.name} in Apple Maps`}>
+                  <Text style={styles.nativeMapText}>↗ Native</Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
+
         {/* Recovery & Longevity */}
         {plan.recovery && (
           <View style={styles.infoCard}>
@@ -506,10 +632,141 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
           </Pressable>
         </View>
 
-        <Text style={styles.disclaimer}>
-          ⚕️ Always consult a physician before initiating a high-intensity training protocol.
-        </Text>
+          <Text style={styles.disclaimer}>
+            ⚕️ Always consult a physician before initiating a high-intensity training protocol.
+          </Text>
+        </>
+      )}
       </ScrollView>
+
+      {/* In-App Interactive Santa Cruz Map Explorer Modal */}
+      <Modal
+        visible={showMapModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowMapModal(false)}>
+        <SafeAreaView style={styles.mapModalContainer}>
+          <View style={styles.mapModalHeader}>
+            <View>
+              <Text style={styles.mapModalTitle}>Santa Cruz Training Grounds</Text>
+              <Text style={styles.mapModalSubtitle}>Interactive Venue & Map Explorer</Text>
+            </View>
+            <Pressable
+              style={styles.mapModalCloseBtn}
+              onPress={() => setShowMapModal(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close map explorer">
+              <Text style={styles.mapModalCloseText}>✕ Close</Text>
+            </Pressable>
+          </View>
+
+          {/* Quick Filter Horizontal Scroll */}
+          <View style={styles.venuePillScrollWrap}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.venuePillContent}>
+              {SANTA_CRUZ_VENUES.map((v) => {
+                const active = v.id === selectedVenue.id;
+                return (
+                  <Pressable
+                    key={v.id}
+                    style={[styles.venuePill, active && styles.venuePillActive]}
+                    onPress={() => setSelectedVenueId(v.id)}>
+                    <Text style={[styles.venuePillText, active && styles.venuePillTextActive]}>
+                      {v.category === 'track' ? '🏃 ' : v.category === 'gym' ? '🏋️ ' : v.category === 'park' ? '🌳 ' : '🧗 '}
+                      {v.name.split(' (')[0].replace(' Santa Cruz', '')}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          {/* Interactive Visual Map Radar / Territory Canvas */}
+          <View style={styles.mapVisualBox}>
+            <View style={styles.mapGridLines}>
+              <View style={styles.gridLineH} />
+              <View style={styles.gridLineH2} />
+              <View style={styles.gridLineV} />
+            </View>
+            <View style={styles.mapCoastlineWater}>
+              <Text style={styles.oceanLabel}>🌊 Monterey Bay / Pacific Ocean</Text>
+            </View>
+            <Text style={styles.mapCompass}>🧭 N · Santa Cruz, CA</Text>
+
+            {/* Pins on the visual map */}
+            {SANTA_CRUZ_VENUES.map((v) => {
+              const isTarget = v.id === selectedVenue.id;
+              const topPct = Math.max(10, Math.min(76, ((37.002 - v.lat) / (37.002 - 36.965)) * 76));
+              const leftPct = Math.max(8, Math.min(84, ((v.lng - (-122.062)) / (-122.000 - (-122.062))) * 80));
+              return (
+                <Pressable
+                  key={v.id}
+                  onPress={() => setSelectedVenueId(v.id)}
+                  style={[
+                    styles.mapPin,
+                    { top: `${topPct}%`, left: `${leftPct}%` },
+                    isTarget && styles.mapPinActive,
+                  ]}>
+                  <Text style={styles.mapPinEmoji}>
+                    {v.category === 'track' ? '🏃' : v.category === 'gym' ? '🏋️' : v.category === 'park' ? '🌳' : '🧗'}
+                  </Text>
+                  {isTarget && (
+                    <View style={styles.mapPinCallout}>
+                      <Text style={styles.mapPinCalloutText} numberOfLines={1}>{v.name.split(' ')[0]}</Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Selected Venue Details Card */}
+          <ScrollView style={styles.selectedVenueScroll} contentContainerStyle={styles.selectedVenueContent}>
+            <View style={styles.selectedVenueCard}>
+              <View style={styles.selectedVenueTop}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.selectedVenueName}>{selectedVenue.name}</Text>
+                  <Text style={styles.selectedVenueDist}>📍 {selectedVenue.distance} • {selectedVenue.category.toUpperCase()}</Text>
+                </View>
+                <View style={styles.coachMatchBadge}>
+                  <Text style={styles.coachMatchText}>Fits: {selectedVenue.bestForCoaches.map(c => c.toUpperCase()).join(', ')}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.selectedVenueAddr}>{selectedVenue.address}</Text>
+              <Text style={styles.selectedVenueWhy}>💡 {selectedVenue.recommendedFor}</Text>
+
+              <View style={styles.selectedVenueTags}>
+                {selectedVenue.equipmentTags.map((tag) => (
+                  <View key={tag} style={styles.venueTag}>
+                    <Text style={styles.venueTagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* Action Buttons: In-App Browser vs Native */}
+              <View style={styles.mapActionRow}>
+                <Pressable
+                  style={styles.openInAppActionBtn}
+                  onPress={() => openInAppMap(selectedVenue)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open live map in app">
+                  <Text style={styles.openInAppActionText}>🚀 Open Live Map In-App</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.openNativeActionBtn}
+                  onPress={() => openNativeMap(selectedVenue)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open in Apple or native maps">
+                  <Text style={styles.openNativeActionText}>🧭 Apple / Native Maps</Text>
+                </Pressable>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -781,4 +1038,249 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a1d',
   },
   chatBtnText: { color: '#f5f5f5', fontWeight: '600', fontSize: 15 },
+
+  // Sub-tab switcher (Routine vs Weekly Recap)
+  subTabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#161619',
+    borderRadius: 10,
+    padding: 4,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: '#2a2a2e',
+    gap: 4,
+  },
+  subTabBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subTabBtnActive: {
+    backgroundColor: '#252529',
+    borderWidth: 1,
+    borderColor: '#3a3a40',
+  },
+  subTabText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#8a8a90',
+  },
+  subTabTextActive: {
+    color: '#f5f5f5',
+  },
+
+  // Mini recap progress banner
+  miniRecapBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#12201d',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 14,
+    borderWidth: 1,
+    borderColor: '#1f3f35',
+  },
+  miniRecapLeft: { flex: 1, gap: 2 },
+  miniRecapTitle: { color: '#4ade80', fontSize: 13, fontWeight: '800' },
+  miniRecapSub: { color: '#8a8a90', fontSize: 11 },
+  miniRecapArrow: { color: '#4ade80', fontSize: 16, fontWeight: '800', marginLeft: 8 },
+
+  // Venue & In-App Map Styles
+  venueCard: {
+    backgroundColor: '#1a1a1d',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2a2a2e',
+    padding: 16,
+    marginTop: 16,
+  },
+  venueHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  venueTitle: { fontSize: 16, fontWeight: '700', color: '#f5f5f5' },
+  venueSub: { fontSize: 12, color: '#8a8a90', marginTop: 2 },
+  exploreMapBtn: {
+    backgroundColor: '#252529',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3a3a40',
+  },
+  exploreMapBtnText: { color: '#00f0ff', fontSize: 12, fontWeight: '700' },
+  venueItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#252529',
+  },
+  venueName: { fontSize: 14, fontWeight: '700', color: '#f5f5f5' },
+  venueDistance: { fontSize: 12, color: '#8a8a90', fontWeight: '400' },
+  venueAddress: { fontSize: 11, color: '#8a8a90', marginTop: 2 },
+  venueWhy: { fontSize: 12, color: '#c0c0c5', marginTop: 4 },
+  venueTagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 6 },
+  venueTag: { backgroundColor: '#252529', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  venueTagText: { fontSize: 10, color: '#8a8a90' },
+  venueBtnCol: { gap: 6, alignItems: 'flex-end' },
+  inAppMapBtn: {
+    backgroundColor: '#003840',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#007080',
+  },
+  inAppMapText: { color: '#00f0ff', fontSize: 11, fontWeight: '700' },
+  nativeMapBtn: {
+    backgroundColor: '#252529',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#3a3a40',
+  },
+  nativeMapText: { color: '#a0a0a6', fontSize: 10, fontWeight: '600' },
+
+  // Map Explorer Modal Styles
+  mapModalContainer: { flex: 1, backgroundColor: '#0d0d0f' },
+  mapModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1f1f23',
+  },
+  mapModalTitle: { fontSize: 18, fontWeight: '800', color: '#f5f5f5' },
+  mapModalSubtitle: { fontSize: 12, color: '#8a8a90', marginTop: 2 },
+  mapModalCloseBtn: {
+    backgroundColor: '#252529',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  mapModalCloseText: { color: '#f5f5f5', fontSize: 12, fontWeight: '700' },
+  venuePillScrollWrap: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#1a1a1d' },
+  venuePillContent: { paddingHorizontal: 16, gap: 8 },
+  venuePill: {
+    backgroundColor: '#1a1a1d',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2a2a2e',
+  },
+  venuePillActive: { backgroundColor: '#003840', borderColor: '#00c0db' },
+  venuePillText: { fontSize: 12, color: '#a0a0a6', fontWeight: '600' },
+  venuePillTextActive: { color: '#00f0ff', fontWeight: '700' },
+  mapVisualBox: {
+    height: 220,
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: '#141418',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2a2a2e',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  mapGridLines: { ...StyleSheet.absoluteFill, opacity: 0.2 },
+  gridLineH: { position: 'absolute', top: '35%', left: 0, right: 0, height: 1, backgroundColor: '#444' },
+  gridLineH2: { position: 'absolute', top: '70%', left: 0, right: 0, height: 1, backgroundColor: '#444' },
+  gridLineV: { position: 'absolute', top: 0, bottom: 0, left: '50%', width: 1, backgroundColor: '#444' },
+  mapCoastlineWater: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 48,
+    backgroundColor: '#0a1d29',
+    borderTopWidth: 1,
+    borderTopColor: '#12384f',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  oceanLabel: { fontSize: 11, color: '#4aa0cc', fontWeight: '600' },
+  mapCompass: { position: 'absolute', top: 8, right: 10, fontSize: 10, color: '#777', fontWeight: '700' },
+  mapPin: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#252529',
+    borderWidth: 1,
+    borderColor: '#444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    transform: [{ translateX: -16 }, { translateY: -16 }],
+  },
+  mapPinActive: {
+    backgroundColor: '#00f0ff',
+    borderColor: '#fff',
+    borderWidth: 2,
+    shadowColor: '#00f0ff',
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 10,
+  },
+  mapPinEmoji: { fontSize: 15 },
+  mapPinCallout: {
+    position: 'absolute',
+    top: -22,
+    backgroundColor: '#0d0d0f',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#00f0ff',
+  },
+  mapPinCalloutText: { fontSize: 9, color: '#00f0ff', fontWeight: '800' },
+  selectedVenueScroll: { flex: 1, marginTop: 12 },
+  selectedVenueContent: { paddingHorizontal: 16, paddingBottom: 30 },
+  selectedVenueCard: {
+    backgroundColor: '#1a1a1d',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#2a2a2e',
+    gap: 8,
+  },
+  selectedVenueTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 },
+  selectedVenueName: { fontSize: 16, fontWeight: '800', color: '#f5f5f5' },
+  selectedVenueDist: { fontSize: 12, color: '#00f0ff', marginTop: 2, fontWeight: '600' },
+  coachMatchBadge: {
+    backgroundColor: '#252529',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  coachMatchText: { fontSize: 10, color: '#b8f0c6', fontWeight: '700' },
+  selectedVenueAddr: { fontSize: 12, color: '#8a8a90', marginTop: 4 },
+  selectedVenueWhy: { fontSize: 13, color: '#d0d0d5', lineHeight: 18, marginTop: 4 },
+  selectedVenueTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  mapActionRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  openInAppActionBtn: {
+    flex: 1,
+    backgroundColor: '#00f0ff',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  openInAppActionText: { color: '#0d0d0f', fontSize: 14, fontWeight: '800' },
+  openNativeActionBtn: {
+    flex: 1,
+    backgroundColor: '#252529',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#3a3a40',
+  },
+  openNativeActionText: { color: '#f5f5f5', fontSize: 13, fontWeight: '700' },
 });
