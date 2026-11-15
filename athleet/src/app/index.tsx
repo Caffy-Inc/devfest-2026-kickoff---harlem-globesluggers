@@ -1,8 +1,10 @@
+import { Image } from 'expo-image';
 import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
+import { wordmarkImage } from '@/components/athleet-wordmark';
 import { CoachAvatar } from '@/components/coach-avatar';
 import { OnboardingMascot } from '@/components/onboarding-mascot';
 import { COACHES } from '@/data/coaches';
@@ -127,7 +129,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.header}>
-          <Text style={styles.logo}>athleet<Text style={styles.logoDot}>.</Text></Text>
+          <Image source={wordmarkImage} style={styles.logo} accessible accessibilityLabel="Athleet" contentFit="contain" />
           {step !== 'age' && (
             <Pressable onPress={back} accessibilityRole="button">
               <Text style={styles.backText}>← Back</Text>
@@ -371,8 +373,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#0d0d0f' },
   content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 48 },
   header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: '#2a2a2e', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  logo: { fontSize: 27, fontWeight: '800', color: '#f5f5f5', letterSpacing: -1 },
-  logoDot: { color: '#f5f5f5' },
+  logo: { width: 108, height: 34 },
   backText: { color: '#a0a0a6', fontSize: 15 },
   progressTrack: { height: 4, backgroundColor: '#2a2a2e', borderRadius: 2, marginTop: 16 },
   progressFill: { height: 4, backgroundColor: '#f5f5f5', borderRadius: 2 },

@@ -1,3 +1,5 @@
+import { wordmarkPath, wordmarkWidth } from './athleet-wordmark';
+
 // All layers share a canvas so limbs and props keep their alignment at every size.
 export type MascotPose = 'age' | 'gender' | 'height' | 'weight' | 'goal' | 'sport' | 'level' | 'results';
 
@@ -20,7 +22,7 @@ const body = `
   <path d="M123 174Q158 206 193 174" fill="none" stroke="#fff3d5" stroke-width="10"/>
   <path d="M124 172Q158 199 192 172" fill="none" stroke="#ed584b" stroke-width="4"/>
   <path d="M110 239L106 256L152 262L160 248L168 262L214 254L208 237" fill="#24345e" stroke="#fff3d5" stroke-width="5" stroke-linejoin="round"/>
-  <text x="159" y="222" text-anchor="middle" font-family="Arial,sans-serif" font-weight="900" font-size="19" fill="#fff3d5">ATHLEET</text>`;
+  <g transform="translate(125 208) scale(${68 / wordmarkWidth})">${wordmarkPath('#fff3d5')}</g>`;
 
 const head = `
   <path d="M131 88L116 51M181 86L195 42" stroke="#f6bc23" stroke-width="15" stroke-linecap="round"/>
