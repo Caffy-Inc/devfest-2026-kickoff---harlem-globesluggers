@@ -34,6 +34,7 @@ export function coachPose(time: number, motion: CoachMotion, reduced: boolean, s
     width: talking ? speech.width + speech.smile * .12 : celebrating ? 1.15 : 1,
     brow: talking ? -speech.brow * 5 : motion === 'thinking' ? 3 : celebrating ? -4 : 0,
     confetti: celebrating ? 1 : 0,
+    leftLeg: 0, rightLeg: 0, tilt: 0,
   };
 }
 export type CoachPose = ReturnType<typeof coachPose>;

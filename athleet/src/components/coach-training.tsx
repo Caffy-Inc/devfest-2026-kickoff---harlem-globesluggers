@@ -2,6 +2,7 @@ import { Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { exerciseRecipe } from '@/lib/exercise-rig';
 import { AnimatedCoach } from '@/components/animated-coach';
 import { PlanView, type PlanParams } from '@/components/plan-view';
 import { CoachWorkout } from '@/components/coach-workout';
@@ -19,6 +20,14 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
   const [day, setDay] = useState<number | null>(initialDay !== undefined && selected?.plan.days[initialDay] ? initialDay : null);
   const [workout, setWorkout] = useState(day !== null);
   const [workoutKey, setWorkoutKey] = useState(0);
+  const [demo, setDemo] = useState<{ name: string | null; resting: boolean }>({ name: null, resting: false });
+  const [playing, setPlaying] = useState(false);
+  const exerciseChanged = useCallback((name: string | null, resting: boolean) => {
+    setDemo(previous => {
+      return previous.name === name && previous.resting === resting ? previous : { name, resting };
+    });
+    setPlaying(false);
+  }, []);
   const [complete, setComplete] = useState(false);
   const [message, setMessage] = useState('Your plan and your training, right here with me. Choose a day and we’ll take it one set at a time.');
   const [asking, setAsking] = useState(false);
@@ -36,6 +45,7 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
   }, [enabled, speak, workout]);
   const resetWorkout = useCallback(() => { setDay(null); setWorkout(false); setComplete(false); }, []);
   function showPlan() {
+    setPlaying(false);
     stop(); request.current++; setBusy(false); setWorkout(false);
     setMessage('Let’s look at your week. Your current workout stays here if you want to resume it.');
   }
@@ -63,7 +73,13 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
   return <SafeAreaView style={styles.screen} edges={['bottom']}>
     <Stack.Screen options={{ headerShown: true, title: `${coach.name.split(' ')[0]} · Train together`, headerStyle: { backgroundColor: '#14130f' }, headerTintColor: '#ffda62', headerBackTitle: 'Coaches' }} />
     <KeyboardAvoidingView style={styles.shell} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
-      <AnimatedCoach coach={coach} compact motion={speech.speaking ? 'talking' : busy ? 'thinking' : complete && workout ? 'celebrate' : 'idle'} speechAnimation={speech.animation} />
+      <AnimatedCoach key={workout ? demo.name : 'plan'} coach={coach} compact exercise={demo.name ?? undefined} paused={!playing || demo.resting} motion={workout && !complete && demo.name ? 'exercise' : speech.speaking ? 'talking' : busy ? 'thinking' : complete && workout ? 'celebrate' : 'idle'} speechAnimation={speech.animation} />
+      {workout && !complete && demo.name && <View style={styles.demoControls}>
+        <Text style={styles.demoCaption}>Illustrated movement · {demo.name}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={playing ? 'Pause exercise animation' : 'Play exercise animation'} disabled={demo.resting || !exerciseRecipe(demo.name)} onPress={() => setPlaying(value => !value)} style={[styles.demoButton, demo.resting && { opacity: .5 }]}>
+          <Text style={styles.demoButtonText}>{!exerciseRecipe(demo.name) ? 'Demo unavailable' : demo.resting ? 'Resting…' : playing ? 'Ⅱ Pause demo' : '▶ Play demo'}</Text>
+        </Pressable>
+      </View>}
       <View style={styles.coachBar}>
         <Text style={styles.message} accessibilityLiveRegion="polite" numberOfLines={asking ? undefined : 3}>{busy ? 'Coach is thinking…' : message}</Text>
         <View style={styles.row}>
@@ -79,11 +95,15 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
       <View style={[styles.panel, workout && styles.hidden]}>
         <PlanView key={mode} embedded parameters={parameters} mode={mode} onSelected={() => { setMode('saved'); setMessage('Your plan is saved. Choose a day below and let’s train together.'); }} onStartWorkout={startWorkout} onPlanChanged={resetWorkout} workoutInProgress={day !== null && !complete} />
       </View>
-      {day !== null && <View style={[styles.panel, !workout && styles.hidden]}><CoachWorkout key={`${day}:${workoutKey}`} dayIndex={day} onExit={showPlan} onCancelEmpty={() => { stop(); resetWorkout(); }} onCue={cue} /></View>}
+      {day !== null && <View style={[styles.panel, !workout && styles.hidden]}><CoachWorkout key={`${day}:${workoutKey}`} dayIndex={day} onExit={showPlan} onCancelEmpty={() => { stop(); resetWorkout(); }} onCue={cue} onExerciseChange={exerciseChanged} /></View>}
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }
 const styles = StyleSheet.create({
+  demoControls: { paddingHorizontal: 18, alignItems: 'center', gap: 6 },
+  demoCaption: { color: '#b5ad94', fontSize: 12, textAlign: 'center' },
+  demoButton: { backgroundColor: '#ffda62', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, minHeight: 44, justifyContent: 'center' },
+  demoButtonText: { color: '#14130f', fontWeight: '800', fontSize: 13 },
   screen: { flex: 1, backgroundColor: '#14130f' }, shell: { flex: 1, width: '100%', maxWidth: 680, alignSelf: 'center' },
   panel: { flex: 1, minHeight: 0 }, hidden: { display: 'none' }, avatar: { alignItems: 'center', padding: 12 },
   coachBar: { paddingHorizontal: 18, paddingTop: 10, borderBottomWidth: 1, borderBottomColor: '#393222' },

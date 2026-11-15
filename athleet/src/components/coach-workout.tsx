@@ -20,7 +20,7 @@ function clock(totalSeconds: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
-export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty }: { dayIndex: number; onExit: () => void; onCue: (text: string, completed: boolean) => void; onCancelEmpty: () => void }) {
+export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExerciseChange }: { onExerciseChange?: (name: string | null, resting: boolean) => void; dayIndex: number; onExit: () => void; onCue: (text: string, completed: boolean) => void; onCancelEmpty: () => void }) {
   const activePlan = useSelectedPlan();
   const [selected] = useState(activePlan);
   const planDay = selected?.plan.days[dayIndex];
@@ -56,6 +56,9 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty }: { dayIn
     const j = entries[i].findIndex((s) => !s.done);
     if (j !== -1) current = { ex: i, set: j };
   }
+
+  const exerciseName = !finished && current ? planDay?.exercises[current.ex].name ?? null : null;
+  useEffect(() => { onExerciseChange?.(exerciseName, resting); }, [exerciseName, resting, onExerciseChange]);
 
   const hype = coach ? finished
     ? hypeLine(coach.id, 'finish', doneCount)

@@ -59,3 +59,51 @@ test('every roster coach has distinct SVG art and all animated layers', () => {
   }
   assert.equal(heads.size, COACHES.length);
 });
+
+const { exerciseRig, exerciseRecipe } = load(path.resolve(__dirname, '../src/lib/exercise-rig.ts'));
+const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+test('V-up starts extended, folds both straight legs with the torso, and reaches toes', () => {
+  const start = exerciseRig(0, 'V-up'), top = exerciseRig(2, 'V-up');
+  assert.equal(start.shoulder.y, start.hip.y);
+  assert.equal(start.legs[0][2].y, start.hip.y);
+  assert.deepEqual(top.legs[0], top.legs[1]);
+  assert.ok(top.shoulder.y < top.hip.y - 40);
+  assert.ok(top.legs[0][2].y < top.hip.y - 50);
+  assert.ok(distance(top.arms[0][2], top.legs[0][2]) < 12);
+  for (let t = 0; t <= 4; t += .1) {
+    const pose = exerciseRig(t, 'V-up');
+    assert.ok(Math.abs(distance(pose.legs[0][0], pose.legs[0][2]) - 68) < .001, 'knees stay straight');
+    assert.equal(pose.hip.y, 170, 'pelvis stays on the mat');
+  }
+});
+test('push-up hands and feet stay planted and plank does not perform push-ups', () => {
+  const a = exerciseRig(0, 'Push-up'), b = exerciseRig(2, 'Push-up');
+  assert.deepEqual(a.arms[0][2], b.arms[0][2]);
+  assert.deepEqual(a.legs[0][2], b.legs[0][2]);
+  assert.ok(b.shoulder.y > a.shoulder.y + 20);
+  assert.deepEqual(exerciseRig(0, 'Plank'), exerciseRig(2, 'Plank'));
+});
+test('curl keeps upper arm still; leg raise keeps torso down; unknown demos are explicit', () => {
+  const a = exerciseRig(0, 'Dumbbell curl'), b = exerciseRig(2, 'Dumbbell curl');
+  assert.deepEqual(a.arms[0][1], b.arms[0][1]);
+  assert.notDeepEqual(a.arms[0][2], b.arms[0][2]);
+  assert.deepEqual(exerciseRig(0, 'Lying leg raise').shoulder, exerciseRig(2, 'Lying leg raise').shoulder);
+  assert.equal(exerciseRig(0, 'Unknown custom exercise'), null);
+  assert.equal(exerciseRecipe('HIIT circuit: squat jumps, mountain climbers'), null);
+  assert.notEqual(exerciseRecipe('Bicycle crunch'), exerciseRecipe('Bike intervals'));
+});
+test('supported roster exercises have finite connected joints over a full rep', () => {
+  const source = fs.readFileSync(path.resolve(__dirname, '../src/data/workouts.ts'), 'utf8');
+  const names = [...source.matchAll(/(?:name|easier|lowImpact): '([^']+)'/g)].map(match => match[1]);
+  for (const name of names) for (let t = 0; t < 4; t += .2) {
+    const pose = exerciseRig(t, name);
+    if (!pose) continue;
+    for (const chain of [...pose.arms, ...pose.legs]) {
+      for (const pt of chain) assert.ok(Number.isFinite(pt.x) && Number.isFinite(pt.y), name);
+      assert.ok(distance(chain[0], chain[1]) > 20, name);
+      assert.ok(distance(chain[1], chain[2]) > 20, name);
+    }
+    for (const chain of pose.arms) assert.deepEqual(chain[0], pose.shoulder, name);
+    for (const chain of pose.legs) assert.deepEqual(chain[0], pose.hip, name);
+  }
+});

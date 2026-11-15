@@ -4,6 +4,7 @@ import { AccessibilityInfo, Animated, AppState, Platform, StyleSheet, Text, View
 import { useFocusEffect } from 'expo-router';
 import { sampleSpeech, emptySpeechAnimation, type SpeechAnimation } from '@/lib/speech-animation';
 import { coachPose, easeInOut, type CoachMotion, type CoachPose } from '@/lib/lebron-motion';
+import { ExerciseDemo } from './exercise-demo';
 import { coachArt, type CoachArt } from './coach-art';
 import type { Coach } from '@/lib/types';
 
@@ -12,9 +13,11 @@ const neutral = coachPose(0, 'idle', true, restingSpeech);
 const poseKeys = Object.keys(neutral) as (keyof CoachPose)[];
 const status = { idle: 'READY WHEN YOU ARE', talking: 'COACH IS SPEAKING', exercise: 'MOVEMENT DEMO · SQUAT', celebrate: 'LET’S GO!', thinking: 'THINKING…' };
 
-export function AnimatedCoach({ coach, motion, speechAnimation, compact = false }: { coach: Coach; compact?: boolean; motion: CoachMotion; speechAnimation: RefObject<SpeechAnimation> }) {
+export function AnimatedCoach({ coach, motion, speechAnimation, compact = false, height, showStatus = true, exercise, paused = false }: { exercise?: string; paused?: boolean; coach: Coach; compact?: boolean; height?: number; showStatus?: boolean; motion: CoachMotion; speechAnimation: RefObject<SpeechAnimation> }) {
   const current = useRef(motion);
   useEffect(() => { current.current = motion; }, [motion]);
+  const playback = useRef({ exercise, paused });
+  useEffect(() => { playback.current = { exercise, paused }; }, [exercise, paused]);
   const [focused, setFocused] = useState(true);
   const [foreground, setForeground] = useState(AppState.currentState !== 'background');
   const [reduced, setReduced] = useState(true);
@@ -39,11 +42,13 @@ export function AnimatedCoach({ coach, motion, speechAnimation, compact = false 
     return () => { active = false; subscription.remove(); };
   }, []);
   useEffect(() => {
-    if (!focused || !foreground) return;
+    if (!focused || !foreground || (motion === 'exercise' && exercise)) return;
     let frame = 0;
     let previous = 0;
     let start = 0;
     let transitionStart = 0;
+    let elapsed = 0;
+    let activeExercise = playback.current.exercise;
     let state = current.current;
     let from = { ...pose.current };
     const render = (now: number) => {
@@ -52,10 +57,13 @@ export function AnimatedCoach({ coach, motion, speechAnimation, compact = false 
       const dt = previous ? Math.min(.05, (now - previous) / 1000) : 1 / 30;
       previous = now;
       if (!start) { start = now; transitionStart = now; }
-      if (state !== current.current) {
+      if (state !== current.current || activeExercise !== playback.current.exercise) {
+        activeExercise = playback.current.exercise; elapsed = 0;
         state = current.current; start = now; transitionStart = now; from = { ...pose.current };
       }
-      const target = coachPose((now - start) / 1000, state, reduced, sampleSpeech(speechAnimation.current, Date.now()));
+      if (!playback.current.paused) elapsed += dt;
+      if (state === 'exercise' && playback.current.paused) return;
+      const target = coachPose(elapsed, state, reduced, sampleSpeech(speechAnimation.current, Date.now()));
       const blend = reduced ? 1 : easeInOut((now - transitionStart) / 450);
       for (const key of poseKeys) {
         // Keep word boundaries responsive, while softly settling lips between syllables.
@@ -67,20 +75,22 @@ export function AnimatedCoach({ coach, motion, speechAnimation, compact = false 
     };
     frame = requestAnimationFrame(render);
     return () => cancelAnimationFrame(frame);
-  }, [focused, foreground, reduced, speechAnimation, values]);
-  const size = compact ? 172 : 278;
+  }, [focused, foreground, reduced, speechAnimation, values, motion, exercise]);
+  if (motion === 'exercise' && exercise) return <ExerciseDemo key={exercise} coach={coach} exercise={exercise} paused={paused} height={height ?? (compact ? 210 : 300)} />;
+  const stageHeight = height ?? (compact ? 190 : 300);
+  const size = Math.max(0, Math.min(compact ? 172 : 278, stageHeight - (showStatus ? 22 : 0)));
   const rotate = (value: Animated.Value, direction = 1) => value.interpolate({ inputRange: [-180, 180], outputRange: [`${-180 * direction}deg`, `${180 * direction}deg`] });
   const layers = coachArt[coach.id] ?? coachArt.lebron;
   const art = (name: keyof CoachArt) => <Image source={layers[name]} style={styles.image} contentFit="contain" accessible={false} />;
   return (
-    <View style={[styles.stage, { height: compact ? 190 : 300 }]} accessible accessibilityLabel={`Illustrated ${coach.name} coach, ${motion}`}>
+    <View style={[styles.stage, { height: stageHeight }]} accessible accessibilityLabel={`Illustrated ${coach.name} coach, ${exercise && motion === 'exercise' ? exercise : motion}`}>
       <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ width: size, height: size }}>
         {art('floor')}
-        <Animated.View style={[styles.layer, { transform: [{ translateY: Animated.multiply(values.body, size / 320) }] }]}>
+        <Animated.View style={[styles.layer, { transform: [{ translateY: Animated.multiply(values.body, size / 320) }, { rotate: rotate(values.tilt) }] }]}>
           {(['left', 'right'] as const).map((side, i) => {
             const x = (i === 0 ? 137 : 183) / 320 * 100;
             const direction = i === 0 ? 1 : -1;
-            return <Animated.View key={side} style={[styles.layer, { transformOrigin: `${x}% 76.25%`, transform: [{ rotate: rotate(values.knee, direction) }] }]}>
+            return <Animated.View key={side} style={[styles.layer, { transformOrigin: `${x}% 76.25%`, transform: [{ rotate: Animated.add(Animated.multiply(values.knee, direction), i === 0 ? values.leftLeg : values.rightLeg).interpolate({ inputRange: [-180, 180], outputRange: ['-180deg', '180deg'] }) }] }]}>
               {art(side === 'left' ? 'leftThigh' : 'rightThigh')}
               <Animated.View style={[styles.layer, { transformOrigin: `${x}% 85%`, transform: [{ rotate: rotate(values.knee, -2 * direction) }] }]}>
                 {art(side === 'left' ? 'leftShin' : 'rightShin')}
@@ -101,7 +111,7 @@ export function AnimatedCoach({ coach, motion, speechAnimation, compact = false 
         </Animated.View>
         <Animated.View style={[styles.layer, { opacity: values.confetti, transform: [{ translateY: Animated.multiply(values.body, size / 640) }] }]}>{art('confetti')}</Animated.View>
       </View>
-      <Text style={styles.status}>{status[motion]}</Text>
+      {showStatus && <Text style={styles.status} numberOfLines={1}>{motion === 'exercise' && exercise ? `${paused ? 'PAUSED' : 'MOVEMENT PREVIEW'} · ${exercise}` : status[motion]}</Text>}
     </View>
   );
 }
