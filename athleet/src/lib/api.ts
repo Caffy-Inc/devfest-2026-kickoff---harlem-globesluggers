@@ -2,6 +2,9 @@ import type { ChatMessage, Coach, UserProfile } from '@/lib/types';
 import { getCoach } from '@/data/coaches';
 import { PROGRAMS } from '@/data/workouts';
 import { adaptationsFor, generatePlan as buildCoachPlan, recommendedDays } from '@/lib/plan';
+import { buildMealPlan, type MealPlan } from '@/lib/meal-plan';
+import { computeTargets } from '@/lib/nutrition';
+import type { NutritionTargets } from '@/lib/types';
 
 // Set EXPO_PUBLIC_API_URL in a .env file once the backend is deployed,
 // e.g. EXPO_PUBLIC_API_URL=https://athleet-api.vercel.app
@@ -48,7 +51,13 @@ export interface GeneratePlanResponse {
     estimatedMinutes?: number;
     notes?: string;
   }[];
-  nutrition: { summary: string; tips: string[] };
+  nutrition: {
+    summary: string;
+    tips: string[];
+    targets?: NutritionTargets;
+    /** Recipe-based day of eating with per-meal pricing. Always built on-device. */
+    mealPlan?: MealPlan;
+  };
   recovery?: { summary: string; tips: string[] };
   restDays?: string[];
   notes?: string;
@@ -108,7 +117,7 @@ export async function generatePlan(
 
       if (res.ok) {
         const raw = await res.json();
-        return normalizePlanResponse(raw, request);
+        return withMealPlan(normalizePlanResponse(raw, request), request, seed);
       }
     } catch (err) {
       console.warn('[api] Backend call failed, using athlete baseline engine:', err);
@@ -119,14 +128,11 @@ export async function generatePlan(
   await new Promise((r) => setTimeout(r, 600));
 
   // Build the personalized plan on-device from the coach's training style.
-  return localPlan(request, seed);
+  return withMealPlan(localPlan(request, seed), request, seed);
 }
 
-function localPlan(req: GeneratePlanRequest, seed: number): GeneratePlanResponse {
-  const coach = getCoach(req.coachId);
-  if (!coach) throw new Error(`Unknown coach: ${req.coachId}`);
-
-  const profile: UserProfile = {
+function profileFromRequest(req: GeneratePlanRequest): UserProfile {
+  return {
     name: req.name,
     age: req.age,
     sex: req.sex,
@@ -140,6 +146,34 @@ function localPlan(req: GeneratePlanRequest, seed: number): GeneratePlanResponse
     equipment: req.equipment ?? 'full_gym',
     injuries: req.injuries ?? 'none',
   };
+}
+
+/**
+ * Attach the recipe-based meal plan. Calorie targets and meal costs are
+ * computed in code (never by the model) so the numbers stay consistent.
+ */
+export function withMealPlan(
+  plan: GeneratePlanResponse,
+  req: GeneratePlanRequest,
+  seed: number
+): GeneratePlanResponse {
+  const profile = profileFromRequest(req);
+  const targets = plan.nutrition.targets ?? computeTargets(profile);
+  const mealPlan = buildMealPlan({
+    goal: profile.goal,
+    coachId: req.coachId,
+    targets,
+    seed,
+    coachTips: PROGRAMS[req.coachId]?.nutritionTips ?? plan.nutrition.tips,
+  });
+  return { ...plan, nutrition: { ...plan.nutrition, targets, mealPlan } };
+}
+
+function localPlan(req: GeneratePlanRequest, seed: number): GeneratePlanResponse {
+  const coach = getCoach(req.coachId);
+  if (!coach) throw new Error(`Unknown coach: ${req.coachId}`);
+
+  const profile = profileFromRequest(req);
   const plan = buildCoachPlan(coach, profile, seed);
   const program = PROGRAMS[coach.id];
 
@@ -156,7 +190,7 @@ function localPlan(req: GeneratePlanRequest, seed: number): GeneratePlanResponse
       coolDown: d.cooldown,
       estimatedMinutes: d.minutes,
     })),
-    nutrition: { summary: plan.nutrition.summary, tips: plan.nutrition.tips },
+    nutrition: { summary: plan.nutrition.summary, tips: plan.nutrition.tips, targets: plan.nutrition.targets },
     recovery: {
       summary: `Rest days: ${plan.restDays?.join(', ')}. ${program.cooldown}.`,
       tips: ['Sleep 8+ hours', 'Light walk or mobility on rest days', 'If something hurts, back off and see a professional'],

@@ -151,7 +151,10 @@ export const WorkoutDaySchema = z.object({
 
 export type WorkoutDay = z.infer<typeof WorkoutDaySchema>;
 
-// ─── Nutrition Guidance (lightweight — not a meal plan) ─────────────────────
+// ─── Nutrition Guidance ─────────────────────────────────────────────────────
+// The model only writes the summary and tips. Recipes, calorie targets and
+// per-meal prices are built on-device (src/lib/meal-plan.ts) so the numbers
+// are always computed, never generated.
 
 export const NutritionSchema = z.object({
   /** One-liner summary (e.g. "High-protein surplus for hypertrophy"). */

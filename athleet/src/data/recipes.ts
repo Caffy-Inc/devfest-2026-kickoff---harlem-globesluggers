@@ -1,0 +1,537 @@
+import type { IngredientId } from '@/data/ingredients';
+
+/**
+ * Recipe library for the Nutrition Blueprint.
+ *
+ * Amounts are for ONE base serving, in grams (ml for liquids). Calories,
+ * macros and cost are never hard-coded: they are computed from the
+ * ingredient catalog so scaling a recipe keeps every number consistent.
+ */
+
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export type RecipeTag =
+  | 'quick'       // 15 min or less
+  | 'no_cook'
+  | 'meal_prep'   // keeps 3-4 days in the fridge
+  | 'budget'      // usually under $3 a serving
+  | 'vegetarian'
+  | 'vegan'
+  | 'pre_workout'
+  | 'post_workout';
+
+export type RecipeIngredient = { id: IngredientId; g: number; note?: string };
+
+export type Recipe = {
+  id: string;
+  name: string;
+  slot: MealSlot;
+  minutes: number;
+  tags: RecipeTag[];
+  /** Coach ids that feature this recipe first in their blueprint. */
+  coachPicks?: string[];
+  ingredients: RecipeIngredient[];
+  steps: string[];
+};
+
+export const RECIPES: Recipe[] = [
+  // ───────────────────────────── Breakfast ─────────────────────────────
+  {
+    id: 'protein-overnight-oats',
+    name: 'Protein Overnight Oats',
+    slot: 'breakfast',
+    minutes: 5,
+    tags: ['no_cook', 'meal_prep', 'budget', 'vegetarian', 'quick'],
+    coachPicks: ['patty', 'callina'],
+    ingredients: [
+      { id: 'oats', g: 60 },
+      { id: 'milk', g: 200 },
+      { id: 'whey', g: 30, note: 'vanilla works best' },
+      { id: 'chia', g: 10 },
+      { id: 'berries', g: 100 },
+    ],
+    steps: [
+      'Stir oats, milk, protein powder and chia seeds together in a jar.',
+      'Top with frozen berries, seal and refrigerate overnight (or at least 4 hours).',
+      'Eat cold, or microwave 90 seconds. Make 3-4 jars on Sunday for the week.',
+    ],
+  },
+  {
+    id: 'veggie-egg-scramble',
+    name: 'Spinach & Pepper Egg Scramble on Toast',
+    slot: 'breakfast',
+    minutes: 12,
+    tags: ['quick', 'vegetarian', 'budget'],
+    coachPicks: ['lebron'],
+    ingredients: [
+      { id: 'eggs', g: 100, note: 'whole' },
+      { id: 'egg_whites', g: 120 },
+      { id: 'spinach', g: 40 },
+      { id: 'bell_pepper', g: 75, note: 'half, diced' },
+      { id: 'bread', g: 64, note: 'toasted' },
+      { id: 'olive_oil', g: 5 },
+    ],
+    steps: [
+      'Heat oil in a non-stick pan over medium. Sauté pepper 2-3 minutes.',
+      'Add spinach until wilted, then pour in whisked eggs and egg whites.',
+      'Stir gently until just set. Season with salt and pepper, serve on toast.',
+    ],
+  },
+  {
+    id: 'greek-yogurt-power-bowl',
+    name: 'Greek Yogurt Power Bowl',
+    slot: 'breakfast',
+    minutes: 3,
+    tags: ['no_cook', 'quick', 'vegetarian'],
+    coachPicks: ['serena'],
+    ingredients: [
+      { id: 'greek_yogurt', g: 250 },
+      { id: 'granola', g: 40 },
+      { id: 'berries', g: 100, note: 'thawed' },
+      { id: 'banana', g: 59, note: 'half, sliced' },
+      { id: 'honey', g: 10 },
+    ],
+    steps: [
+      'Spoon yogurt into a bowl.',
+      'Top with granola, berries and banana slices.',
+      'Drizzle with honey and eat right away so the granola stays crunchy.',
+    ],
+  },
+  {
+    id: 'pb-banana-oatmeal',
+    name: 'Peanut Butter Banana Oatmeal',
+    slot: 'breakfast',
+    minutes: 8,
+    tags: ['quick', 'budget', 'vegetarian', 'pre_workout'],
+    coachPicks: ['ronnie', 'bolt'],
+    ingredients: [
+      { id: 'oats', g: 80 },
+      { id: 'milk', g: 250 },
+      { id: 'banana', g: 118, note: 'sliced' },
+      { id: 'peanut_butter', g: 32 },
+      { id: 'whey', g: 30 },
+    ],
+    steps: [
+      'Simmer oats in milk 4-5 minutes, stirring, until thick.',
+      'Take off the heat and stir in protein powder (add a splash of water if too thick).',
+      'Top with banana and peanut butter.',
+    ],
+  },
+  {
+    id: 'turkey-breakfast-burrito',
+    name: 'Turkey & Egg Breakfast Burrito',
+    slot: 'breakfast',
+    minutes: 15,
+    tags: ['meal_prep', 'quick'],
+    coachPicks: ['ronaldo'],
+    ingredients: [
+      { id: 'ground_turkey', g: 85 },
+      { id: 'eggs', g: 100 },
+      { id: 'black_beans', g: 60 },
+      { id: 'cheddar', g: 20 },
+      { id: 'salsa', g: 40 },
+      { id: 'tortilla', g: 70, note: 'large' },
+    ],
+    steps: [
+      'Brown the turkey in a pan 5-6 minutes, season with salt, cumin and chili powder.',
+      'Push to one side, scramble the eggs, then stir in beans to warm.',
+      'Fill the tortilla with the mix, cheese and salsa. Roll tight.',
+      'Meal prep: wrap in foil, freeze, and microwave 2 minutes from frozen.',
+    ],
+  },
+  {
+    id: 'cottage-cheese-bagel',
+    name: 'Bagel with Cottage Cheese, Tomato & Egg',
+    slot: 'breakfast',
+    minutes: 10,
+    tags: ['quick', 'vegetarian', 'budget'],
+    ingredients: [
+      { id: 'bagel', g: 100, note: 'toasted' },
+      { id: 'cottage_cheese', g: 150 },
+      { id: 'eggs', g: 50, note: 'fried or boiled' },
+      { id: 'tomato', g: 80, note: 'sliced' },
+    ],
+    steps: [
+      'Toast the bagel and cook the egg how you like it.',
+      'Spread cottage cheese on both halves.',
+      'Layer tomato slices and the egg, finish with black pepper.',
+    ],
+  },
+
+  // ─────────────────────────────── Lunch ───────────────────────────────
+  {
+    id: 'chicken-rice-bowl',
+    name: 'Chicken, Rice & Broccoli Bowl',
+    slot: 'lunch',
+    minutes: 25,
+    tags: ['meal_prep', 'budget', 'post_workout'],
+    coachPicks: ['ronnie', 'patty'],
+    ingredients: [
+      { id: 'chicken_breast', g: 170, note: 'raw weight' },
+      { id: 'white_rice', g: 75, note: 'dry weight' },
+      { id: 'broccoli', g: 150 },
+      { id: 'olive_oil', g: 7 },
+      { id: 'soy_sauce', g: 15 },
+    ],
+    steps: [
+      'Cook rice according to the package (about 1 cup cooked per serving).',
+      'Season chicken with salt, pepper and garlic powder. Cook in oil 6-7 minutes per side until 165°F inside.',
+      'Steam or microwave broccoli 4 minutes.',
+      'Slice chicken, build the bowl and drizzle with soy sauce. Batch 4 at a time.',
+    ],
+  },
+  {
+    id: 'turkey-avocado-wrap',
+    name: 'Turkey Avocado Wrap',
+    slot: 'lunch',
+    minutes: 5,
+    tags: ['no_cook', 'quick'],
+    ingredients: [
+      { id: 'tortilla', g: 70 },
+      { id: 'turkey_deli', g: 113 },
+      { id: 'avocado', g: 50, note: 'mashed' },
+      { id: 'romaine', g: 40 },
+      { id: 'tomato', g: 60 },
+      { id: 'apple', g: 180, note: 'on the side' },
+    ],
+    steps: [
+      'Spread mashed avocado over the tortilla.',
+      'Layer turkey, lettuce and tomato slices.',
+      'Roll tight, cut in half and pack an apple on the side.',
+    ],
+  },
+  {
+    id: 'tuna-chickpea-salad',
+    name: 'Mediterranean Tuna & Chickpea Salad',
+    slot: 'lunch',
+    minutes: 10,
+    tags: ['no_cook', 'quick', 'budget', 'meal_prep'],
+    coachPicks: ['ronaldo'],
+    ingredients: [
+      { id: 'tuna', g: 113, note: 'drained' },
+      { id: 'chickpeas', g: 120 },
+      { id: 'cucumber', g: 100 },
+      { id: 'tomato', g: 100 },
+      { id: 'feta', g: 25 },
+      { id: 'olive_oil', g: 10 },
+      { id: 'lemon', g: 42, note: 'juice of half' },
+    ],
+    steps: [
+      'Dice cucumber and tomato.',
+      'Toss with tuna, chickpeas and feta.',
+      'Dress with olive oil, lemon juice, salt, pepper and oregano. Keeps 3 days.',
+    ],
+  },
+  {
+    id: 'turkey-chili',
+    name: 'Lean Turkey & Bean Chili',
+    slot: 'lunch',
+    minutes: 35,
+    tags: ['meal_prep', 'budget'],
+    coachPicks: ['lebron'],
+    ingredients: [
+      { id: 'ground_turkey', g: 140 },
+      { id: 'kidney_beans', g: 100 },
+      { id: 'black_beans', g: 60 },
+      { id: 'tomato', g: 150, note: 'or canned diced' },
+      { id: 'onion', g: 60 },
+      { id: 'bell_pepper', g: 75 },
+      { id: 'cheddar', g: 15, note: 'to top' },
+    ],
+    steps: [
+      'Brown turkey with diced onion and pepper in a large pot, 8 minutes.',
+      'Add tomatoes, beans, 2 tsp chili powder, 1 tsp cumin and 1/2 cup water.',
+      'Simmer 20 minutes. Top with cheddar. Make a big batch — it freezes well.',
+    ],
+  },
+  {
+    id: 'tofu-quinoa-bowl',
+    name: 'Crispy Tofu Quinoa Bowl',
+    slot: 'lunch',
+    minutes: 25,
+    tags: ['vegan', 'vegetarian', 'meal_prep'],
+    coachPicks: ['serena'],
+    ingredients: [
+      { id: 'tofu', g: 200, note: 'pressed, cubed' },
+      { id: 'quinoa', g: 60, note: 'dry' },
+      { id: 'stirfry_veg', g: 150 },
+      { id: 'soy_sauce', g: 15 },
+      { id: 'olive_oil', g: 10 },
+      { id: 'avocado', g: 50 },
+    ],
+    steps: [
+      'Rinse quinoa and simmer in 2x water 15 minutes.',
+      'Pan-fry tofu cubes in oil 8-10 minutes until golden, add soy sauce at the end.',
+      'Stir-fry the vegetables 4-5 minutes.',
+      'Build the bowl and top with sliced avocado.',
+    ],
+  },
+  {
+    id: 'jerk-chicken-rice-peas',
+    name: 'Jerk Chicken with Rice & Peas',
+    slot: 'lunch',
+    minutes: 35,
+    tags: ['meal_prep'],
+    coachPicks: ['bolt'],
+    ingredients: [
+      { id: 'chicken_thigh', g: 170 },
+      { id: 'jerk_seasoning', g: 20 },
+      { id: 'white_rice', g: 70, note: 'dry' },
+      { id: 'kidney_beans', g: 80 },
+      { id: 'coconut_milk_lite', g: 60 },
+      { id: 'green_beans', g: 100 },
+    ],
+    steps: [
+      'Rub chicken with jerk paste; marinate 30 minutes or overnight.',
+      'Cook rice with kidney beans, coconut milk and enough water per package directions.',
+      'Bake chicken at 425°F for 22-25 minutes until 175°F inside.',
+      'Serve with steamed green beans.',
+    ],
+  },
+
+  // ─────────────────────────────── Dinner ──────────────────────────────
+  {
+    id: 'salmon-sweet-potato',
+    name: 'Sheet-Pan Salmon, Sweet Potato & Broccoli',
+    slot: 'dinner',
+    minutes: 30,
+    tags: ['post_workout'],
+    coachPicks: ['lebron', 'serena'],
+    ingredients: [
+      { id: 'salmon', g: 170, note: 'fillet' },
+      { id: 'sweet_potato', g: 250, note: 'cubed' },
+      { id: 'broccoli', g: 150 },
+      { id: 'olive_oil', g: 10 },
+      { id: 'lemon', g: 42 },
+    ],
+    steps: [
+      'Heat oven to 425°F. Toss sweet potato in half the oil, roast 15 minutes.',
+      'Add broccoli and salmon to the pan, brush with remaining oil, season.',
+      'Roast 12 minutes more until salmon flakes. Squeeze lemon over everything.',
+    ],
+  },
+  {
+    id: 'steak-potatoes',
+    name: 'Sirloin Steak, Roasted Potatoes & Green Beans',
+    slot: 'dinner',
+    minutes: 35,
+    tags: ['post_workout'],
+    coachPicks: ['ronnie'],
+    ingredients: [
+      { id: 'sirloin', g: 200 },
+      { id: 'potato', g: 300 },
+      { id: 'green_beans', g: 150 },
+      { id: 'olive_oil', g: 10 },
+    ],
+    steps: [
+      'Cube potatoes, toss with half the oil and salt, roast at 425°F for 30 minutes.',
+      'Pat steak dry, season well. Sear in a hot pan 3-4 minutes per side for medium.',
+      'Rest steak 5 minutes. Sauté green beans in the same pan 4 minutes.',
+    ],
+  },
+  {
+    id: 'turkey-pasta-bolognese',
+    name: 'Turkey Bolognese Whole-Wheat Pasta',
+    slot: 'dinner',
+    minutes: 25,
+    tags: ['meal_prep', 'budget'],
+    coachPicks: ['patty', 'callina'],
+    ingredients: [
+      { id: 'ground_turkey', g: 150 },
+      { id: 'pasta', g: 85, note: 'dry' },
+      { id: 'marinara', g: 150 },
+      { id: 'zucchini', g: 100, note: 'diced' },
+      { id: 'mozzarella', g: 20, note: 'or parmesan' },
+    ],
+    steps: [
+      'Boil pasta in salted water per package.',
+      'Brown turkey with zucchini 7-8 minutes, add marinara and simmer 5 minutes.',
+      'Toss with drained pasta, top with cheese.',
+    ],
+  },
+  {
+    id: 'shrimp-stir-fry',
+    name: 'Garlic Shrimp Stir-Fry with Jasmine Rice',
+    slot: 'dinner',
+    minutes: 20,
+    tags: ['quick'],
+    coachPicks: ['bolt'],
+    ingredients: [
+      { id: 'shrimp', g: 170 },
+      { id: 'jasmine_rice', g: 75, note: 'dry' },
+      { id: 'stirfry_veg', g: 200 },
+      { id: 'soy_sauce', g: 20 },
+      { id: 'olive_oil', g: 10 },
+      { id: 'lime', g: 33, note: 'half' },
+    ],
+    steps: [
+      'Start the rice.',
+      'Stir-fry vegetables in hot oil 4 minutes, push aside.',
+      'Add shrimp with minced garlic, cook 2-3 minutes until pink.',
+      'Add soy sauce and lime juice, toss, serve over rice.',
+    ],
+  },
+  {
+    id: 'cod-potatoes',
+    name: 'Baked Cod with Potatoes, Egg & Olive Oil',
+    slot: 'dinner',
+    minutes: 30,
+    tags: [],
+    coachPicks: ['ronaldo'],
+    ingredients: [
+      { id: 'cod', g: 200 },
+      { id: 'potato', g: 250 },
+      { id: 'onion', g: 60, note: 'sliced' },
+      { id: 'eggs', g: 50, note: 'hard-boiled' },
+      { id: 'olive_oil', g: 12 },
+      { id: 'spinach', g: 60 },
+    ],
+    steps: [
+      'Slice potatoes thin, toss with onion and half the oil, bake at 400°F for 15 minutes.',
+      'Lay cod on top, drizzle remaining oil, season with garlic and paprika. Bake 12-15 minutes.',
+      'Serve with a quartered boiled egg and wilted spinach.',
+    ],
+  },
+  {
+    id: 'lentil-coconut-curry',
+    name: 'Red Lentil Coconut Curry',
+    slot: 'dinner',
+    minutes: 30,
+    tags: ['vegan', 'vegetarian', 'meal_prep', 'budget'],
+    coachPicks: ['serena'],
+    ingredients: [
+      { id: 'lentils', g: 80, note: 'dry' },
+      { id: 'coconut_milk_lite', g: 120 },
+      { id: 'tomato', g: 120 },
+      { id: 'onion', g: 60 },
+      { id: 'spinach', g: 60 },
+      { id: 'brown_rice', g: 60, note: 'dry' },
+    ],
+    steps: [
+      'Cook brown rice (about 40 minutes, or use microwave rice).',
+      'Sauté onion 4 minutes with 1 tbsp curry powder and garlic.',
+      'Add lentils, tomatoes, coconut milk and 1 cup water. Simmer 18-20 minutes.',
+      'Stir in spinach until wilted. Serve over rice.',
+    ],
+  },
+  {
+    id: 'chicken-fajita-bowl',
+    name: 'Chicken Fajita Burrito Bowl',
+    slot: 'dinner',
+    minutes: 25,
+    tags: ['meal_prep'],
+    coachPicks: ['callina'],
+    ingredients: [
+      { id: 'chicken_breast', g: 170 },
+      { id: 'brown_rice', g: 65, note: 'dry' },
+      { id: 'black_beans', g: 100 },
+      { id: 'bell_pepper', g: 150 },
+      { id: 'onion', g: 60 },
+      { id: 'salsa', g: 50 },
+      { id: 'avocado', g: 40 },
+    ],
+    steps: [
+      'Slice chicken, peppers and onion into strips. Season with fajita spices.',
+      'Cook in a hot skillet 8-10 minutes until chicken is done.',
+      'Serve over rice and warm beans, top with salsa and avocado.',
+    ],
+  },
+
+  // ─────────────────────────────── Snacks ──────────────────────────────
+  {
+    id: 'recovery-shake',
+    name: 'Banana Berry Recovery Shake',
+    slot: 'snack',
+    minutes: 3,
+    tags: ['quick', 'no_cook', 'post_workout', 'vegetarian'],
+    coachPicks: ['ronnie', 'lebron', 'bolt'],
+    ingredients: [
+      { id: 'whey', g: 30 },
+      { id: 'milk', g: 250 },
+      { id: 'banana', g: 118 },
+      { id: 'berries', g: 75 },
+    ],
+    steps: ['Blend everything with a few ice cubes for 30 seconds. Drink within an hour after training.'],
+  },
+  {
+    id: 'yogurt-almonds',
+    name: 'Greek Yogurt, Almonds & Honey',
+    slot: 'snack',
+    minutes: 2,
+    tags: ['quick', 'no_cook', 'vegetarian'],
+    coachPicks: ['ronaldo', 'serena'],
+    ingredients: [
+      { id: 'greek_yogurt', g: 200 },
+      { id: 'almonds', g: 20 },
+      { id: 'honey', g: 8 },
+    ],
+    steps: ['Top yogurt with almonds and a drizzle of honey.'],
+  },
+  {
+    id: 'apple-pb',
+    name: 'Apple & Peanut Butter',
+    slot: 'snack',
+    minutes: 2,
+    tags: ['quick', 'no_cook', 'budget', 'vegan', 'vegetarian', 'pre_workout'],
+    ingredients: [
+      { id: 'apple', g: 180 },
+      { id: 'peanut_butter', g: 32 },
+    ],
+    steps: ['Slice the apple and dip in peanut butter.'],
+  },
+  {
+    id: 'rice-cake-pb-banana',
+    name: 'Pre-Workout Rice Cakes',
+    slot: 'snack',
+    minutes: 3,
+    tags: ['quick', 'no_cook', 'budget', 'pre_workout', 'vegetarian'],
+    coachPicks: ['bolt', 'callina'],
+    ingredients: [
+      { id: 'rice_cakes', g: 27 },
+      { id: 'peanut_butter', g: 16 },
+      { id: 'banana', g: 118 },
+      { id: 'honey', g: 7 },
+    ],
+    steps: ['Spread peanut butter on rice cakes, top with banana slices and honey. Eat 30-60 minutes before training.'],
+  },
+  {
+    id: 'cottage-cheese-pineapple',
+    name: 'Cottage Cheese & Pineapple',
+    slot: 'snack',
+    minutes: 2,
+    tags: ['quick', 'no_cook', 'budget', 'vegetarian'],
+    coachPicks: ['patty'],
+    ingredients: [
+      { id: 'cottage_cheese', g: 200 },
+      { id: 'pineapple', g: 100 },
+    ],
+    steps: ['Spoon cottage cheese into a bowl and top with pineapple. Great before bed.'],
+  },
+  {
+    id: 'hummus-veggie-box',
+    name: 'Hummus Protein Snack Box',
+    slot: 'snack',
+    minutes: 10,
+    tags: ['no_cook', 'meal_prep', 'vegetarian'],
+    ingredients: [
+      { id: 'hummus', g: 60 },
+      { id: 'eggs', g: 100, note: 'hard-boiled' },
+      { id: 'cucumber', g: 100 },
+      { id: 'bell_pepper', g: 75 },
+    ],
+    steps: ['Hard-boil eggs (10 minutes) ahead of time.', 'Slice veggies and pack with hummus and eggs.'],
+  },
+  {
+    id: 'dark-choc-trail',
+    name: 'Dark Chocolate Almond Bites',
+    slot: 'snack',
+    minutes: 1,
+    tags: ['quick', 'no_cook', 'vegan', 'vegetarian'],
+    ingredients: [
+      { id: 'almonds', g: 25 },
+      { id: 'dark_chocolate', g: 15 },
+      { id: 'banana', g: 118 },
+    ],
+    steps: ['Portion almonds and two squares of dark chocolate with a banana.'],
+  },
+];

@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { HomeLogo } from '@/components/home-logo';
 import { CoachAvatar } from '@/components/coach-avatar';
+import { NutritionBlueprint } from '@/components/nutrition-blueprint';
 import { getCoach } from '@/data/coaches';
 import { generatePlan, type GeneratePlanResponse } from '@/lib/api';
 import { planWarnings } from '@/lib/plan';
@@ -437,16 +438,12 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
         )}
 
         {/* Nutrition Blueprint */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>🥗 Nutrition Blueprint</Text>
-          <Text style={styles.infoSummary}>{plan.nutrition.summary}</Text>
-          {plan.nutrition.tips.map((tip, i) => (
-            <View key={i} style={styles.tipRow}>
-              <Text style={styles.tipBullet}>•</Text>
-              <Text style={styles.tipText}>{tip}</Text>
-            </View>
-          ))}
-        </View>
+        <NutritionBlueprint
+          summary={plan.nutrition.summary}
+          tips={plan.nutrition.tips}
+          targets={plan.nutrition.targets}
+          mealPlan={plan.nutrition.mealPlan}
+        />
 
         {/* Recovery & Longevity */}
         {plan.recovery && (
