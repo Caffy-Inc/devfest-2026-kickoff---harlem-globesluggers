@@ -1,6 +1,7 @@
 import * as Speech from 'expo-speech';
 
 import { signatureFor, type Signature } from '@/data/hype';
+import { getClonedVoice, speakWithClonedVoice, stopClonedAudio } from '@/lib/voice-clone';
 
 // Speaks each coach's signature line with a device voice that fits them
 // (male/female, closest accent, and their pitch/speed).
@@ -9,7 +10,10 @@ let muted = false;
 
 export function setVoiceMuted(value: boolean) {
   muted = value;
-  if (value) Speech.stop();
+  if (value) {
+    Speech.stop();
+    stopClonedAudio();
+  }
 }
 
 // Known voices by gender (iOS/macOS, Android Google TTS, Windows/Edge, Chrome).
@@ -142,6 +146,11 @@ export async function coachVoiceOptions(coachId: string) {
 export async function shoutSignature(coachId: string) {
   if (muted) return;
   const sig = signatureFor(coachId);
+  // A custom voice (Voice Settings) takes priority over device text-to-speech.
+  if (getClonedVoice(coachId)) {
+    Speech.stop();
+    if (await speakWithClonedVoice(coachId, sig.text, { rate: sig.rate })) return;
+  }
   if (!voices.length) await withTimeout(loadVoices(), 1200);
   if (muted) return;
   const { voice, confirmed } = voiceFor(coachId, sig);

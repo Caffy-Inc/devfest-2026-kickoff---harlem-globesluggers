@@ -37,9 +37,14 @@ export default function CoachesScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <HomeLogo style={styles.logo} />
-          <Pressable onPress={() => router.replace('/questionnaire' as any)} accessibilityRole="button" hitSlop={8}>
-            <Text style={styles.link}>Edit my answers</Text>
-          </Pressable>
+          <View style={styles.headerLinks}>
+            <Pressable onPress={() => router.push('/voice-settings' as any)} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.link}>Coach voices</Text>
+            </Pressable>
+            <Pressable onPress={() => router.replace('/questionnaire' as any)} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.link}>Edit my answers</Text>
+            </Pressable>
+          </View>
         </View>
 
         <ResetOnboarding />
@@ -72,6 +77,7 @@ const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 32 },
   header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: '#2a2a2e', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
   logo: { width: 108, height: 34 },
+  headerLinks: { flexDirection: 'row', gap: 16 },
   link: { color: '#a0a0a6', fontSize: 14, textDecorationLine: 'underline' },
   spacer: { height: 24 },
   label: { fontSize: 13, fontWeight: '700', color: '#8a8a90', textTransform: 'uppercase', letterSpacing: 1 },
