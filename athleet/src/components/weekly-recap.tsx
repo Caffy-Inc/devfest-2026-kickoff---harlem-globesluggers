@@ -354,7 +354,7 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
             </Text>
             {coach && (
               <Text style={styles.restCoachTip}>
-                💡 {coach.name.split(' ')[0]}'s Tip: "Recovery isn't time off; it's part of the process."
+                {`💡 ${coach.name.split(' ')[0]}'s Tip: "Recovery isn't time off; it's part of the process."`}
               </Text>
             )}
           </View>
@@ -378,12 +378,12 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
           <View style={styles.emptyLogsCard}>
             <Text style={styles.emptyLogsTitle}>No workouts finished yet this week</Text>
             <Text style={styles.emptyLogsSub}>
-              Start Day 1 in your routine or tap "+ Log Sample Workout" above to preview your recap metrics!
+              {'Start Day 1 in your routine or tap "+ Log Sample Workout" above to preview your recap metrics!'}
             </Text>
             <Pressable
               style={styles.startTodayBtn}
               onPress={() => router.push({ pathname: '/workout', params: { day: '0' } })}>
-              <Text style={styles.startTodayText}>▶ Start Today's Workout</Text>
+              <Text style={styles.startTodayText}>{"▶ Start Today's Workout"}</Text>
             </Pressable>
           </View>
         ) : (

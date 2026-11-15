@@ -7,6 +7,27 @@ export type HypeLines = {
   finish: string[];   // shown when the workout is done
 };
 
+/**
+ * Each athlete's signature line, spoken out loud after every logged set.
+ * Spoken with the phone's text-to-speech (not the athlete's real voice).
+ * pitch/rate tweak the delivery so each coach sounds a little different.
+ */
+export type Signature = { text: string; pitch: number; rate: number };
+
+export const SIGNATURES: Record<string, Signature> = {
+  ronnie: { text: 'YEAH BUDDY! LIGHT WEIGHT!', pitch: 0.75, rate: 1.05 },
+  lebron: { text: 'Strive for greatness!', pitch: 0.85, rate: 0.95 },
+  bolt: { text: 'To di world!', pitch: 1.0, rate: 1.1 },
+  ronaldo: { text: 'Siuuuuu!', pitch: 1.05, rate: 0.9 },
+  serena: { text: 'Come on!', pitch: 1.15, rate: 1.05 },
+  callina: { text: 'Level up! Let\'s go!', pitch: 1.25, rate: 1.1 },
+  patty: { text: "Let's get it!", pitch: 1.2, rate: 1.05 },
+};
+
+export function signatureFor(coachId: string): Signature {
+  return SIGNATURES[coachId] ?? { text: "Let's go!", pitch: 1, rate: 1 };
+}
+
 export const HYPE: Record<string, HypeLines> = {
   ronnie: {
     setStart: [

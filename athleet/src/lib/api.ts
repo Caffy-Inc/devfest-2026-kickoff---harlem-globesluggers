@@ -1,5 +1,7 @@
 import type { ChatMessage, Coach, UserProfile } from '@/lib/types';
 import { getCoach } from '@/data/coaches';
+import { hypeLine } from '@/data/hype';
+import { SUGGESTION_ANSWERS } from '@/data/suggestions';
 import { PROGRAMS } from '@/data/workouts';
 import { adaptationsFor, generatePlan as buildCoachPlan, recommendedDays } from '@/lib/plan';
 import { buildMealPlan, type MealPlan } from '@/lib/meal-plan';
@@ -260,6 +262,22 @@ async function demoReply(coach: Coach, profile: UserProfile | null, messages: Ch
   }
   if (/eat|food|diet|meal|protein|calorie/.test(last)) {
     return `Nutrition is key. Focus on lean protein at every meal, complex carbs for training fuel, and lots of water. ${capitalize(coach.signature.recovery[0])}.`;
+  }
+  const sig = coach.signature;
+  const known = SUGGESTION_ANSWERS[last.trim()];
+  if (known) return known;
+  if (/recover|rest|sore|sleep/.test(last)) {
+    return `Recovery is where you grow. ${sig.recovery.map(capitalize).join('. ')}. Take at least one full rest day a week.`;
+  }
+  if (/start|begin|first|new to/.test(last)) {
+    return `Start simple: ${sig.methods[0]}. Learn ${sig.staples.slice(0, 2).join(' and ')} with light weight and perfect form, and show up for every session this week. Tap Plan when you're ready.`;
+  }
+  if (/motivat|tired|lazy|can't|hard/.test(last)) {
+    return `${hypeLine(coach.id, 'setStart', messages.length)} You don't need to feel ready, you just need to start. One set, then the next.`;
+  }
+  if (/jump|fast|speed|sprint|stamina|kick|arms|glute|footwork|ball|heavy|failure|knee|disciplin|lift/.test(last)) {
+    const key = sig.staples.slice(1, 4).join(', ');
+    return `Here's how I'd attack that: ${sig.methods[1] ?? sig.methods[0]}. Key moves: ${key}. Be consistent for 4-6 weeks and you'll feel the difference. Your plan already has these built in.`;
   }
   const level = profile?.level ? ` for a ${profile.level}` : '';
   return `Love that energy! As your ${first}-style coach${level}, my priority is ${coach.signature.methods[0]}. Ask me for your weekly plan or training advice!`;

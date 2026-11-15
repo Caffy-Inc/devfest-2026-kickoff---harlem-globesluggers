@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomeLogo } from '@/components/home-logo';
 import { CoachCard } from '@/components/coach-card';
+import { StreakBadge } from '@/components/streak-badge';
 import { COACHES } from '@/data/coaches';
 import { rankCoaches } from '@/lib/match';
 import { getProfile } from '@/lib/profile-store';
@@ -40,6 +41,9 @@ export default function CoachesScreen() {
           </Pressable>
         </View>
 
+        <StreakBadge />
+        <View style={styles.spacer} />
+
         <Text style={styles.label}>Your coach</Text>
         <Text style={styles.subtle}>Tap any coach to start chatting.</Text>
         <CoachCard match={matches[0]} highlight onPress={openChat} />
@@ -67,6 +71,7 @@ const styles = StyleSheet.create({
   header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: '#2a2a2e', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
   logo: { width: 108, height: 34 },
   link: { color: '#a0a0a6', fontSize: 14, textDecorationLine: 'underline' },
+  spacer: { height: 24 },
   label: { fontSize: 13, fontWeight: '700', color: '#8a8a90', textTransform: 'uppercase', letterSpacing: 1 },
   subtle: { color: '#8a8a90', fontSize: 13, marginTop: 4 },
   spaced: { marginTop: 32 },

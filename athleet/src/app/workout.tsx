@@ -4,9 +4,11 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CoachAvatar } from '@/components/coach-avatar';
+import { StreakBadge } from '@/components/streak-badge';
 import { getCoach } from '@/data/coaches';
-import { hypeLine } from '@/data/hype';
+import { hypeLine, signatureFor } from '@/data/hype';
 import { useSelectedPlan } from '@/lib/selected-plan';
+import { setVoiceMuted, shoutSignature } from '@/lib/voice';
 import { restSeconds, saveWorkout, type LoggedSet } from '@/lib/workout-log';
 
 type SetEntry = { reps: string; weight: string; done: boolean };
@@ -37,6 +39,9 @@ export default function WorkoutScreen() {
   const [now, setNow] = useState(() => Date.now());
   const [restEnd, setRestEnd] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
+  const [muted, setMuted] = useState(false);
+  // Shows the signature line in the bubble for a moment after a set is logged.
+  const [shoutUntil, setShoutUntil] = useState(0);
 
   // One clock drives the elapsed time and the rest countdown.
   useEffect(() => {
@@ -69,9 +74,12 @@ export default function WorkoutScreen() {
   }
 
   const first = coach.name.split(' ')[0];
+  const shouting = now < shoutUntil;
   const hype = finished
     ? hypeLine(coach.id, 'finish', doneCount)
-    : resting
+    : shouting
+      ? signatureFor(coach.id).text
+      : resting
       ? hypeLine(coach.id, 'rest', doneCount)
       : hypeLine(coach.id, 'setStart', doneCount);
 
@@ -83,6 +91,8 @@ export default function WorkoutScreen() {
     const wasDone = entries[ex][set].done;
     update(ex, set, { done: !wasDone });
     if (wasDone) return;
+    shoutSignature(coach!.id);
+    setShoutUntil(Date.now() + 2500);
     const isLastOverall = doneCount + 1 >= total;
     const rest = restSeconds(planDay!.exercises[ex].rest);
     setRestEnd(!isLastOverall && rest > 0 ? Date.now() + rest * 1000 : null);
@@ -123,6 +133,13 @@ export default function WorkoutScreen() {
           <Text style={styles.dayName} numberOfLines={1}>{planDay.name}</Text>
           <Text style={styles.focus} numberOfLines={1}>{planDay.focus}</Text>
         </View>
+        <Pressable
+          onPress={() => { setVoiceMuted(!muted); setMuted(!muted); }}
+          accessibilityRole="button"
+          accessibilityLabel={muted ? 'Unmute coach voice' : 'Mute coach voice'}
+          hitSlop={10}>
+          <Text style={styles.mute}>{muted ? '🔇' : '🔊'}</Text>
+        </Pressable>
         <Text style={styles.timer}>{clock((now - startedAt) / 1000)}</Text>
       </View>
       <View style={styles.progressTrack}>
@@ -134,7 +151,7 @@ export default function WorkoutScreen() {
         <CoachAvatar coach={coach} size={52} />
         <View style={styles.hypeBubble}>
           <Text style={styles.hypeName}>{first}</Text>
-          <Text key={hype + doneCount} style={styles.hypeText}>{hype}</Text>
+          <Text key={hype + doneCount} style={[styles.hypeText, shouting && !finished && styles.hypeShout]}>{hype}</Text>
         </View>
       </View>
 
@@ -157,6 +174,7 @@ export default function WorkoutScreen() {
               <Stat value={volume ? `${Math.round(volume).toLocaleString()}` : '—'} label="lb lifted" />
             </View>
           </View>
+          <StreakBadge />
           <Pressable style={styles.primaryBtn} onPress={() => router.back()} accessibilityRole="button">
             <Text style={styles.primaryText}>Back to my plan</Text>
           </Pressable>
@@ -261,6 +279,8 @@ const styles = StyleSheet.create({
   hypeBubble: { flex: 1, backgroundColor: '#1a1a1d', borderWidth: 1, borderColor: '#3a3a40', borderRadius: 14, borderBottomLeftRadius: 4, padding: 12 },
   hypeName: { color: '#8a8a90', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
   hypeText: { color: '#f5f5f5', fontSize: 17, fontWeight: '800', marginTop: 2 },
+  hypeShout: { fontSize: 22, color: '#ffd23f' },
+  mute: { fontSize: 20 },
   restBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, marginTop: 12, backgroundColor: '#1f3a26', borderColor: '#3d7a4e', borderWidth: 1, borderRadius: 10, padding: 12 },
   restText: { color: '#b8f0c6', fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] },
   restSkip: { color: '#b8f0c6', fontSize: 14, fontWeight: '600' },

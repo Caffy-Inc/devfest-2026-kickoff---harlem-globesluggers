@@ -1,4 +1,8 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSyncExternalStore } from 'react';
+
+// Finished workouts, saved on the device (phone storage on iOS/Android, localStorage on web)
+// so the weekly recap and streaks survive restarts.
 
 export type LoggedSet = { exercise: string; set: number; reps: string; weight: string };
 
@@ -26,27 +30,48 @@ function loadInitialLogs(): WorkoutLog[] {
   return [];
 }
 
+// Web can read storage instantly; phones load it asynchronously below.
 let logs: WorkoutLog[] = loadInitialLogs();
 const listeners = new Set<() => void>();
 
+function notify() {
+  listeners.forEach((l) => l());
+}
+
+const logId = (l: WorkoutLog) => `${l.coachId}|${l.dayIndex}|${l.finishedAt}`;
+
+// Load saved history (needed on iOS/Android, where localStorage doesn't exist).
+AsyncStorage.getItem(STORAGE_KEY)
+  .then((raw) => {
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (!Array.isArray(saved)) return;
+    // Merge without duplicates (on web the instant load may already have them).
+    const seen = new Set(logs.map(logId));
+    const missing = (saved as WorkoutLog[]).filter((l) => !seen.has(logId(l)));
+    if (missing.length) {
+      logs = [...missing, ...logs].sort((a, b) => a.finishedAt - b.finishedAt);
+      notify();
+    }
+  })
+  .catch(() => {
+    // Storage unavailable: history just won't persist this session.
+  });
+
 function persistLogs() {
-  if (typeof window !== 'undefined' && window.localStorage) {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-    } catch {}
-  }
+  AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(logs)).catch(() => {});
 }
 
 export function saveWorkout(log: WorkoutLog) {
   logs = [...logs, log];
   persistLogs();
-  listeners.forEach((l) => l());
+  notify();
 }
 
 export function clearLogs() {
   logs = [];
   persistLogs();
-  listeners.forEach((l) => l());
+  notify();
 }
 
 function getLogs() {
@@ -152,4 +177,56 @@ export function seedDemoWorkout(coachId: string, dayIndex: number, dayName: stri
     minutes: 48,
     sets: sampleSets,
   });
+}
+// ── Streaks ─────────────────────────────────────────────────────────────
+
+/** Local calendar day, e.g. "2026-11-14". */
+function dayKey(time: number | Date): string {
+  const d = new Date(time);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function shiftDays(d: Date, days: number): Date {
+  const copy = new Date(d);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+}
+
+export type Streak = {
+  current: number;      // days in a row, ending today or yesterday
+  best: number;         // longest run ever
+  doneToday: boolean;   // already logged a workout today
+};
+
+/** Days in a row with at least one logged workout. Still alive if the last one was yesterday. */
+export function computeStreak(all: WorkoutLog[], now: Date = new Date()): Streak {
+  const days = new Set(all.map((l) => dayKey(l.finishedAt)));
+  const doneToday = days.has(dayKey(now));
+
+  let current = 0;
+  let cursor = doneToday ? now : shiftDays(now, -1);
+  while (days.has(dayKey(cursor))) {
+    current += 1;
+    cursor = shiftDays(cursor, -1);
+  }
+
+  let best = 0;
+  for (const key of days) {
+    const [y, m, d] = key.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    if (days.has(dayKey(shiftDays(date, -1)))) continue; // not the start of a run
+    let run = 0;
+    let c = date;
+    while (days.has(dayKey(c))) {
+      run += 1;
+      c = shiftDays(c, 1);
+    }
+    best = Math.max(best, run);
+  }
+
+  return { current, best: Math.max(best, current), doneToday };
+}
+
+export function useStreak(): Streak {
+  return computeStreak(useWorkoutLogs());
 }

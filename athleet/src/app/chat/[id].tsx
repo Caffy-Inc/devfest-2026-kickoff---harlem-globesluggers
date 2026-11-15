@@ -7,11 +7,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CoachAvatar } from '@/components/coach-avatar';
 import { getCoach } from '@/data/coaches';
+import { PLAN_PROMPT, suggestionsFor } from '@/data/suggestions';
 import { sendChat } from '@/lib/api';
 import { getProfile } from '@/lib/profile-store';
 import type { ChatMessage } from '@/lib/types';
 
-const QUICK_PROMPTS = ['Make my weekly plan', 'What should I eat?', 'How do I start?'];
 
 export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -128,10 +128,16 @@ export default function ChatScreen() {
           }
         />
 
-        {messages.length <= 1 && (
+        {/* Suggested next messages, refreshed after every reply */}
+        {!typing && (
           <View style={styles.quickRow}>
-            {QUICK_PROMPTS.map((q) => (
-              <Pressable key={q} style={styles.quick} onPress={() => (q === QUICK_PROMPTS[0] ? openPlan() : send(q))} accessibilityRole="button">
+            {suggestionsFor(coach.id, messages.filter((m) => m.role === 'user').map((m) => m.content)).map((q) => (
+              <Pressable
+                key={q}
+                style={styles.quick}
+                onPress={() => (q === PLAN_PROMPT ? openPlan() : send(q))}
+                accessibilityRole="button"
+                accessibilityLabel={`Suggested: ${q}`}>
                 <Text style={styles.quickText}>{q}</Text>
               </Pressable>
             ))}

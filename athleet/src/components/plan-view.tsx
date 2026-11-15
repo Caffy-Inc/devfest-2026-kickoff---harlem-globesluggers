@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { HomeLogo } from '@/components/home-logo';
 import { CoachAvatar } from '@/components/coach-avatar';
+import { StreakBadge } from '@/components/streak-badge';
 import { NutritionBlueprint } from '@/components/nutrition-blueprint';
 import { WeeklyRecapView } from '@/components/weekly-recap';
 import { getCoach } from '@/data/coaches';
@@ -289,6 +290,8 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
                 <Text style={styles.toastText}>⚡ {toastMessage}</Text>
               </View>
             )}
+
+            {mode === 'saved' && <StreakBadge />}
 
             {/* Coach Header banner */}
             <View style={styles.quoteCard}>
