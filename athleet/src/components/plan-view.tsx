@@ -18,6 +18,7 @@ import { generatePlan, type GeneratePlanResponse } from '@/lib/api';
 import { planWarnings } from '@/lib/plan';
 import { getProfile, updateProfile } from '@/lib/profile-store';
 import { selectPlan, useSelectedPlan } from '@/lib/selected-plan';
+import { lastLogForDay, useWorkoutLogs } from '@/lib/workout-log';
 
 type PlanParams = {
   coachId?: string;
@@ -44,6 +45,7 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
   const profile = getProfile();
   const selected = useSelectedPlan();
   const saved = mode === 'saved' ? selected : null;
+  const logs = useWorkoutLogs();
 
   const coachId = saved?.coachId || params.coachId || 'lebron';
   const coach = getCoach(coachId);
@@ -333,6 +335,7 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
             >
               <Text style={[styles.dayTabText, expandedDay === index && styles.dayTabTextActive]}>
                 {day.name.split(' — ')[0]}
+                {mode === 'saved' && lastLogForDay(logs, coachId, index) ? ' ✓' : ''}
               </Text>
             </Pressable>
           ))}
@@ -408,6 +411,29 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
                 <Text style={styles.phaseText}>{plan.days[expandedDay].coolDown}</Text>
               </View>
             )}
+
+            {/* Start this day's workout (only for the selected plan) */}
+            {mode === 'saved' && (() => {
+              const last = lastLogForDay(logs, coachId, expandedDay);
+              return (
+                <View style={styles.startWrap}>
+                  {last && (
+                    <Text style={styles.doneNote}>
+                      ✓ Done this week · {last.sets.length} {last.sets.length === 1 ? 'set' : 'sets'} in {Math.max(1, last.minutes)} min
+                    </Text>
+                  )}
+                  <Pressable
+                    style={styles.startBtn}
+                    onPress={() => router.push({ pathname: '/workout', params: { day: String(expandedDay) } })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Start day ${expandedDay + 1} workout`}>
+                    <Text style={styles.startText}>
+                      ▶  {last ? 'Do it again' : `Start Day ${expandedDay + 1} workout`}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            })()}
           </View>
         )}
 
@@ -493,6 +519,10 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
 }
 
 const styles = StyleSheet.create({
+  startWrap: { marginTop: 16, gap: 8 },
+  startBtn: { backgroundColor: '#f5f5f5', borderRadius: 10, paddingVertical: 16, alignItems: 'center' },
+  startText: { color: '#0d0d0f', fontSize: 16, fontWeight: '800' },
+  doneNote: { color: '#b8f0c6', fontSize: 13, fontWeight: '600', textAlign: 'center' },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#f5f5f5' },
   selectBtn: { backgroundColor: '#f5f5f5', borderRadius: 10, paddingVertical: 18, alignItems: 'center' },
   selectBtnDone: { backgroundColor: '#1f3a26', borderWidth: 1, borderColor: '#3d7a4e' },
