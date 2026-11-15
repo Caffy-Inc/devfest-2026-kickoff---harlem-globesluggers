@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   backText: { color: '#a0a0a6', fontSize: 15 },
   progressTrack: { height: 4, backgroundColor: '#2a2a2e', borderRadius: 2, marginTop: 16 },
   progressFill: { height: 4, backgroundColor: '#f5f5f5', borderRadius: 2 },
-  intro: { flex: 1, justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 64 },
+  intro: { flexGrow: 1, justifyContent: 'center', paddingVertical: 32 },
   description: { color: '#b0b0b5', fontSize: 18, marginTop: 0, marginBottom: 24, textAlign: 'center' },
   question: { color: '#f5f5f5', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtle: { color: '#8a8a90', fontSize: 14, marginBottom: 8, textAlign: 'center' },
