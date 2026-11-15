@@ -10,7 +10,7 @@ import { MAX_MINUTES, recommendedDays } from '@/lib/plan';
 import { setProfile } from '@/lib/profile-store';
 import type { Goal, Level, Sex } from '@/lib/types';
 
-type Step = 'age' | 'gender' | 'height' | 'weight' | 'goal' | 'sport' | 'level' | 'days' | 'time';
+type Step = 'start' | 'age' | 'gender' | 'height' | 'weight' | 'goal' | 'sport' | 'level' | 'days' | 'time';
 type Units = 'imperial' | 'metric';
 type Option<T> = { value: T; label: string; hint?: string };
 
@@ -60,7 +60,7 @@ export default function HomeScreen() {
   const { height, width } = useWindowDimensions();
   const heroSize = Math.min(width - 48, height * 0.32, 280);
   const mascotSize = Math.min(180, height * 0.23);
-  const [step, setStep] = useState<Step>('age');
+  const [step, setStep] = useState<Step>('start');
   const [error, setError] = useState('');
   const [units, setUnits] = useState<Units>('imperial');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -119,7 +119,7 @@ export default function HomeScreen() {
   function back() {
     let i = ORDER.indexOf(step) - 1;
     if (ORDER[i] === 'sport' && goal !== 'sport_performance') i -= 1;
-    go(ORDER[Math.max(0, i)]);
+    go(ORDER[i] ?? 'start');
   }
 
   function submitAge() {
@@ -167,16 +167,27 @@ export default function HomeScreen() {
         >
           <View style={styles.header}>
             <Image source={wordmarkImage} style={styles.logo} accessible accessibilityLabel="Athleet" contentFit="contain" />
-            {step !== 'age' && (
+            {step !== 'start' && (
               <Pressable onPress={back} accessibilityRole="button">
                 <Text style={styles.backText}>← Back</Text>
               </Pressable>
             )}
           </View>
 
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-          </View>
+          {step === 'start' ? (
+            <View style={[styles.intro, styles.welcome]}>
+              <View style={styles.welcomeBubble}>
+                <View style={styles.welcomeBubbleTail} />
+                <Text accessibilityRole="header" style={styles.welcomeTitle}>Welcome to Athleet</Text>
+              </View>
+              <OnboardingMascot size={Math.min(width - 48, height * 0.45, 360)} reaction="welcome" cue="start" />
+              <PrimaryButton label="Get started  →" onPress={() => go('age')} />
+            </View>
+          ) : (
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            </View>
+          )}
 
           {step === 'age' && (
             <View style={[styles.intro, isEditingNumber && styles.editingIntro]}>
@@ -426,6 +437,10 @@ const styles = StyleSheet.create({
   numericContent: { paddingBottom: 72 },
   editingIntro: { paddingVertical: 12 },
   intro: { flexGrow: 1, justifyContent: 'center', paddingVertical: 32 },
+  welcome: { width: '100%', maxWidth: 400, alignSelf: 'center' },
+  welcomeBubble: { alignSelf: 'center', backgroundColor: '#fff3d5', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 12, marginBottom: -8, zIndex: 1 },
+  welcomeBubbleTail: { position: 'absolute', left: '39%', bottom: -6, width: 16, height: 16, backgroundColor: '#fff3d5', transform: [{ rotate: '45deg' }] },
+  welcomeTitle: { color: '#24345e', fontSize: 24, fontWeight: '500', textAlign: 'center' },
   question: { color: '#f5f5f5', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtle: { color: '#8a8a90', fontSize: 14, marginBottom: 8, textAlign: 'center' },
   row: { flexDirection: 'row', gap: 12 },

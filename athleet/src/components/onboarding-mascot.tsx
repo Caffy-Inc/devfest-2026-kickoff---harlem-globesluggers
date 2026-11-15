@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, AppState, Easing, Platform, StyleSheet, View } from 'react-native';
 
-import { mascotArt, type MascotPose } from './mascot-art';
+import { mascotArt, spinBallCenter, spinBallSeam, type MascotPose } from './mascot-art';
 
 type Reaction = 'welcome' | 'encourage' | 'retry' | 'celebrate';
 const keyframes = [0, 0.12, 0.23, 0.36, 0.49, 0.62, 0.73, 0.85, 1];
@@ -18,6 +18,17 @@ const segments = keyframes.slice(0, -1).flatMap((start, index) => {
   });
 });
 const frames = [...segments.map(({ time }) => time), 1];
+
+const spinFrames = Array.from({ length: 65 }, (_, i) => i / 64);
+// Project the front half of each meridian onto the ball. At the rim it
+// disappears into the outline before its opposite side comes into view.
+const spinSeams = [0.125, 0.375, 0.625, 0.875].map(offset => {
+  const angles = spinFrames.map(time => (time + offset) * 2 * Math.PI);
+  return {
+    scaleX: angles.map(angle => Math.sin(angle)),
+    opacity: angles.map(angle => Math.max(0, Math.min(1, Math.cos(angle) * 5))),
+  };
+});
 
 function smoothTrack(poses: number[]) {
   const slopes = poses.slice(1).map((pose, i) => (pose - poses[i]) / (keyframes[i + 1] - keyframes[i]));
@@ -37,6 +48,10 @@ function smoothTrack(poses: number[]) {
 
 // Let the body lead, with arms, head, and props following at their own pace.
 const gestures = {
+  start: {
+    body: still, stretch: still, left: still, right: still, prop: still,
+    head: [0, -2, -4, -3, 0, 2, 3, 1, 0],
+  },
   age: {
     body: [0, 2, -4, -3, -2, -3, 1, 0, 0], stretch: [0, -3, 2, 1, 0, 1, -1, 0, 0],
     head: [0, 2, -6, -5, 1, -4, -1, 0, 0],
@@ -138,7 +153,7 @@ export function OnboardingMascot({
 
     const animation = Animated.loop(Animated.timing(progress, {
       toValue: 1,
-      duration: reaction === 'retry' ? 2200 : cue === 'sport' ? 2500 : 3100,
+      duration: cue === 'start' ? 1550 : reaction === 'retry' ? 2200 : cue === 'sport' ? 2500 : 3100,
       easing: Easing.linear,
       useNativeDriver: Platform.OS !== 'web',
       isInteraction: false,
@@ -187,6 +202,15 @@ export function OnboardingMascot({
       }]}>
         <Image source={art.prop} style={styles.image} contentFit="contain" />
       </Animated.View>
+      {cue === 'start' && spinSeams.map(({ scaleX, opacity }, index) => (
+        <Animated.View key={index} style={[StyleSheet.absoluteFill, {
+          opacity: progress.interpolate({ inputRange: spinFrames, outputRange: opacity }),
+          transformOrigin: [size * spinBallCenter.x / 320, size * spinBallCenter.y / 320, 0],
+          transform: [{ scaleX: progress.interpolate({ inputRange: spinFrames, outputRange: scaleX }) }],
+        }]}>
+          <Image source={spinBallSeam} style={styles.image} contentFit="contain" />
+        </Animated.View>
+      ))}
     </View>
   );
 }

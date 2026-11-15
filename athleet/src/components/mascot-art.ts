@@ -1,7 +1,9 @@
 import { wordmarkPath, wordmarkWidth } from './athleet-wordmark';
 
 // All layers share a canvas so limbs and props keep their alignment at every size.
-export type MascotPose = 'age' | 'gender' | 'height' | 'weight' | 'goal' | 'sport' | 'level' | 'results';
+export type MascotPose = 'start' | 'age' | 'gender' | 'height' | 'weight' | 'goal' | 'sport' | 'level' | 'results';
+
+export const spinBallCenter = { x: 260, y: 82 };
 
 function svg(markup: string) {
   return { uri: `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320">${markup}</svg>`)}` };
@@ -42,6 +44,7 @@ function arm(path: string, x: number, y: number) {
 }
 
 const poses = {
+  start: { left: 'M116 184Q74 201 72 157', lx: 72, ly: 157, right: 'M204 183Q266 204 260 132', rx: 260, ry: 132 },
   age: { left: 'M116 184Q88 196 77 174', lx: 77, ly: 174, right: 'M202 181Q232 164 240 128', rx: 240, ry: 128 },
   gender: { left: 'M115 183Q89 205 65 189', lx: 65, ly: 189, right: 'M203 183Q230 205 253 187', rx: 253, ry: 187 },
   height: { left: 'M115 184Q89 207 84 219', lx: 84, ly: 219, right: 'M204 182Q238 145 233 91', rx: 233, ry: 91 },
@@ -52,6 +55,17 @@ const poses = {
   results: { left: 'M115 184Q85 161 72 124', lx: 72, ly: 124, right: 'M204 183Q234 161 246 122', rx: 246, ry: 122 },
 };
 const ball = '<circle cx="263" cy="225" r="25" fill="#ff873d"/><g fill="none" stroke="#983f26" stroke-width="2.5"><circle cx="263" cy="225" r="24"/><path d="M239 225H287M263 201V249M246 207Q271 225 246 243M280 207Q255 225 280 243"/></g>';
+const spinBall = `<g transform="translate(${spinBallCenter.x} ${spinBallCenter.y})">
+  <defs><radialGradient id="ball-light" cx="32%" cy="24%" r="77%">
+    <stop stop-color="#ffc077"/><stop offset="1" stop-color="#eb642d"/>
+  </radialGradient></defs>
+  <circle r="33" fill="url(#ball-light)" stroke="#983f26" stroke-width="2.5"/>
+  <path d="M-33 0Q0 13 33 0" fill="none" stroke="#983f26" stroke-width="2.5"/>
+</g>`;
+export const spinBallSeam = svg(`<path transform="translate(${spinBallCenter.x} ${spinBallCenter.y})"
+  d="M0 -32A32 32 0 0 1 0 32" fill="none" stroke="#983f26" stroke-width="2.5"/>`);
+const court = `<ellipse cx="155" cy="293" rx="132" ry="18" fill="#181d29" stroke="#303a51" stroke-width="1.5"/>
+  <path d="M40 94L50 104M50 94L40 104M285 143L295 137M56 130H66" fill="none" stroke="#f4ab51" stroke-width="2.5" stroke-linecap="round"/>`;
 const star = '<path d="M258 87L265 103L283 105L269 117L273 135L258 126L242 135L246 117L232 105L250 103Z" fill="#ffcf32"/><path d="M254 108L258 104" stroke="#fff3d5" stroke-width="4" stroke-linecap="round"/>';
 const ruler = '<rect x="252" y="67" width="19" height="193" rx="5" fill="#fff3d5"/><path d="M253 83H264M253 102H260M253 121H264M253 140H260M253 159H264M253 178H260M253 197H264M253 216H260M253 235H264" stroke="#24345e" stroke-width="3"/>';
 const confetti = '<g fill="#ffcf32"><path d="M52 64L56 76L68 80L56 84L52 97L48 84L36 80L48 76Z"/><path d="M269 51L272 60L282 63L272 66L269 76L266 66L256 63L266 60Z"/></g><g fill="none" stroke-width="6" stroke-linecap="round"><path d="M38 135L45 140M276 153L287 144" stroke="#ef685b"/><path d="M73 42L79 53M233 32L229 43" stroke="#81b7c9"/></g>';
@@ -59,7 +73,7 @@ const confetti = '<g fill="#ffcf32"><path d="M52 64L56 76L68 80L56 84L52 97L48 8
 export const mascotArt = Object.fromEntries(Object.entries(poses).map(([pose, p]) => [pose, {
   body: svg(body),
   face: svg(head + (pose === 'results' ? happyEyes : eyes) + (pose === 'height' ? thoughtful : smile)),
-  left: svg(arm(p.left, p.lx, p.ly)),
-  right: svg(arm(p.right, p.rx, p.ry)),
-  prop: svg(({ height: ruler, goal: star, sport: ball, results: confetti } as Record<string, string>)[pose] ?? ''),
+  left: svg((pose === 'start' ? court : '') + arm(p.left, p.lx, p.ly)),
+  right: svg(arm(p.right, p.rx, p.ry) + (pose === 'start' ? '<path d="M260 131V115" stroke="#ffcf32" stroke-width="9" stroke-linecap="round"/>' : '')),
+  prop: svg(({ start: spinBall, height: ruler, goal: star, sport: ball, results: confetti } as Record<string, string>)[pose] ?? ''),
 }])) as Record<MascotPose, { body: ReturnType<typeof svg>; face: ReturnType<typeof svg>; left: ReturnType<typeof svg>; right: ReturnType<typeof svg>; prop: ReturnType<typeof svg> }>;
