@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 
 import { CoachAvatar } from '@/components/coach-avatar';
+import { OnboardingMascot } from '@/components/onboarding-mascot';
 import { COACHES } from '@/data/coaches';
 import { rankCoaches } from '@/lib/match';
 import { setProfile } from '@/lib/profile-store';
@@ -46,7 +46,8 @@ const ORDER: Step[] = ['age', 'gender', 'height', 'weight', 'goal', 'sport', 'le
 
 export default function HomeScreen() {
   const { height, width } = useWindowDimensions();
-  const heroSize = Math.min(width - 48, height * 0.34, 320);
+  const heroSize = Math.min(width - 48, height * 0.32, 280);
+  const mascotSize = Math.min(180, height * 0.23);
   const [step, setStep] = useState<Step>('age');
   const [error, setError] = useState('');
   const [units, setUnits] = useState<Units>('imperial');
@@ -142,7 +143,7 @@ export default function HomeScreen() {
 
         {step === 'age' && (
           <View style={styles.intro}>
-            <Image source={require('@/assets/images/swag.jpg')} style={[styles.heroLogo, { width: heroSize, height: heroSize }]} contentFit="contain" />
+            <OnboardingMascot size={heroSize} reaction={error ? 'retry' : 'welcome'} cue={step} />
             <Text style={styles.description}>How old are you?</Text>
             <TextInput
               accessibilityLabel="Your age"
@@ -163,7 +164,8 @@ export default function HomeScreen() {
 
         {step === 'gender' && (
           <View style={styles.intro}>
-            <Text style={styles.question}>What's your gender?</Text>
+            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
+            <Text style={styles.question}>What&apos;s your gender?</Text>
             <Text style={styles.subtle}>Used to estimate your calorie needs.</Text>
             <Choices options={GENDERS} selected={sex} onPick={(v) => { setSex(v); go('height'); }} />
           </View>
@@ -171,6 +173,7 @@ export default function HomeScreen() {
 
         {step === 'height' && (
           <View style={styles.intro}>
+            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
             <Text style={styles.question}>How tall are you?</Text>
             <UnitToggle units={units} onChange={setUnits} />
             {units === 'imperial' ? (
@@ -220,6 +223,7 @@ export default function HomeScreen() {
 
         {step === 'weight' && (
           <View style={styles.intro}>
+            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
             <Text style={styles.question}>How much do you weigh?</Text>
             <UnitToggle units={units} onChange={setUnits} />
             <TextInput
@@ -241,13 +245,15 @@ export default function HomeScreen() {
 
         {step === 'goal' && (
           <View style={styles.intro}>
-            <Text style={styles.question}>What's your main goal?</Text>
+            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
+            <Text style={styles.question}>What&apos;s your main goal?</Text>
             <Choices options={GOALS} selected={goal} onPick={pickGoal} />
           </View>
         )}
 
         {step === 'sport' && (
           <View style={styles.intro}>
+            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
             <Text style={styles.question}>Which sport?</Text>
             <Choices options={SPORTS} selected={sport} onPick={(v) => { setSport(v); go('level'); }} />
           </View>
@@ -255,6 +261,7 @@ export default function HomeScreen() {
 
         {step === 'level' && (
           <View style={styles.intro}>
+            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
             <Text style={styles.question}>How experienced are you?</Text>
             <Choices options={LEVELS} selected={level} onPick={(v) => { setLevel(v); go('results'); }} />
           </View>
@@ -262,6 +269,7 @@ export default function HomeScreen() {
 
         {step === 'results' && matches.length > 0 && (
           <View style={styles.list}>
+            <OnboardingMascot size={mascotSize} reaction="celebrate" cue={step} />
             <Text style={styles.resultsLabel}>Your coach</Text>
             <Text style={styles.subtleLeft}>Tap any coach to start chatting.</Text>
             <CoachCard match={matches[0]} highlight onPress={openChat} />
@@ -369,7 +377,6 @@ const styles = StyleSheet.create({
   progressTrack: { height: 4, backgroundColor: '#2a2a2e', borderRadius: 2, marginTop: 16 },
   progressFill: { height: 4, backgroundColor: '#f5f5f5', borderRadius: 2 },
   intro: { flex: 1, justifyContent: 'flex-start', paddingTop: 0, paddingBottom: 64 },
-  heroLogo: { width: '100%', maxWidth: 480, aspectRatio: 1, alignSelf: 'center', marginTop: 0, marginBottom: -24 },
   description: { color: '#b0b0b5', fontSize: 18, marginTop: 0, marginBottom: 24, textAlign: 'center' },
   question: { color: '#f5f5f5', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtle: { color: '#8a8a90', fontSize: 14, marginBottom: 8, textAlign: 'center' },
