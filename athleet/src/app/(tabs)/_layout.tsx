@@ -30,6 +30,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📋</Text>,
         }}
       />
+      <Tabs.Screen
+        name="my-meals"
+        options={{
+          title: 'Your Meals',
+          // Meals come with the plan, so this also waits for a selection.
+          href: selected ? '/my-meals' : null,
+          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🥗</Text>,
+        }}
+      />
     </Tabs>
   );
 }

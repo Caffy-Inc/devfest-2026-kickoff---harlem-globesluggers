@@ -437,13 +437,15 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
           </View>
         )}
 
-        {/* Nutrition Blueprint */}
-        <NutritionBlueprint
-          summary={plan.nutrition.summary}
-          tips={plan.nutrition.tips}
-          targets={plan.nutrition.targets}
-          mealPlan={plan.nutrition.mealPlan}
-        />
+        {/* Nutrition Blueprint (the saved plan shows it in the "Your Meals" tab) */}
+        {mode === 'preview' && (
+          <NutritionBlueprint
+            summary={plan.nutrition.summary}
+            tips={plan.nutrition.tips}
+            targets={plan.nutrition.targets}
+            mealPlan={plan.nutrition.mealPlan}
+          />
+        )}
 
         {/* Recovery & Longevity */}
         {plan.recovery && (
