@@ -41,10 +41,31 @@ export type Coach = {
 };
 
 export type PlanExercise = { name: string; sets: number; reps: string; rest: string; notes?: string };
+
+export type PlanDay = {
+  name: string;       // e.g. "Monday"
+  focus: string;      // e.g. "Lower-body strength & power"
+  warmup?: string;
+  cooldown?: string;
+  minutes?: number;   // rough session length
+  exercises: PlanExercise[];
+};
+
+export type NutritionTargets = {
+  showNumbers: boolean; // false for under-18s: food guidance only
+  calories?: number;
+  proteinG?: number;
+  carbsG?: number;
+  fatG?: number;
+  note: string;
+};
+
 export type WeeklyPlan = {
   why: string;
-  days: { name: string; focus: string; exercises: PlanExercise[] }[];
-  nutrition: { summary: string; tips: string[] };
+  days: PlanDay[];
+  restDays?: string[];
+  warnings?: { tone: 'low' | 'high'; title: string; text: string }[];
+  nutrition: { summary: string; tips: string[]; targets?: NutritionTargets };
 };
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
