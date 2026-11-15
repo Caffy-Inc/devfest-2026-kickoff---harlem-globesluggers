@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
-import { useMemo, useState } from 'react';
-import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
@@ -53,6 +53,22 @@ export default function HomeScreen() {
   const [step, setStep] = useState<Step>('age');
   const [error, setError] = useState('');
   const [units, setUnits] = useState<Units>('imperial');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const isNumericStep = step === 'age' || step === 'height' || step === 'weight';
+  const isEditingNumber = isNumericStep && keyboardVisible;
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+
+    const ios = Platform.OS === 'ios';
+    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardVisible(false));
+
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const [age, setAge] = useState('');
   const [sex, setSex] = useState<Sex | null>(null);
@@ -127,170 +143,176 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-        <View style={styles.header}>
-          <Image source={wordmarkImage} style={styles.logo} accessible accessibilityLabel="Athleet" contentFit="contain" />
-          {step !== 'age' && (
-            <Pressable onPress={back} accessibilityRole="button">
-              <Text style={styles.backText}>← Back</Text>
-            </Pressable>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={[styles.content, isNumericStep && styles.numericContent]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={isNumericStep ? 'none' : 'on-drag'}
+        >
+          <View style={styles.header}>
+            <Image source={wordmarkImage} style={styles.logo} accessible accessibilityLabel="Athleet" contentFit="contain" />
+            {step !== 'age' && (
+              <Pressable onPress={back} accessibilityRole="button">
+                <Text style={styles.backText}>← Back</Text>
+              </Pressable>
+            )}
+          </View>
+
+          {step !== 'results' && (
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+            </View>
           )}
-        </View>
 
-        {step !== 'results' && (
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-          </View>
-        )}
-
-        {step === 'age' && (
-          <View style={styles.intro}>
-            <OnboardingMascot size={heroSize} reaction={error ? 'retry' : 'welcome'} cue={step} />
-            <Text style={styles.description}>How old are you?</Text>
-            <TextInput
-              accessibilityLabel="Your age"
-              style={styles.input}
-              value={age}
-              onChangeText={(v) => { setAge(v); setError(''); }}
-              placeholder="Enter your age"
-              placeholderTextColor="#6b6b72"
-              keyboardAppearance="dark"
-              keyboardType="number-pad"
-              maxLength={3}
-              onSubmitEditing={submitAge}
-            />
-            <ErrorText text={error} />
-            <PrimaryButton label="Continue  →" onPress={submitAge} />
-          </View>
-        )}
-
-        {step === 'gender' && (
-          <View style={styles.intro}>
-            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
-            <Text style={styles.question}>What&apos;s your gender?</Text>
-            <Text style={styles.subtle}>Used to estimate your calorie needs.</Text>
-            <Choices options={GENDERS} selected={sex} onPick={(v) => { setSex(v); go('height'); }} />
-          </View>
-        )}
-
-        {step === 'height' && (
-          <View style={styles.intro}>
-            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
-            <Text style={styles.question}>How tall are you?</Text>
-            <UnitToggle units={units} onChange={setUnits} />
-            {units === 'imperial' ? (
-              <View style={styles.row}>
-                <TextInput
-                  accessibilityLabel="Feet"
-                  style={[styles.input, styles.flex]}
-                  value={feet}
-                  onChangeText={(v) => { setFeet(v); setError(''); }}
-                  placeholder="ft"
-                  placeholderTextColor="#6b6b72"
-                  keyboardAppearance="dark"
-                  keyboardType="number-pad"
-                  maxLength={1}
-                />
-                <TextInput
-                  accessibilityLabel="Inches"
-                  style={[styles.input, styles.flex]}
-                  value={inches}
-                  onChangeText={(v) => { setInches(v); setError(''); }}
-                  placeholder="in"
-                  placeholderTextColor="#6b6b72"
-                  keyboardAppearance="dark"
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  onSubmitEditing={submitHeight}
-                />
-              </View>
-            ) : (
+          {step === 'age' && (
+            <View style={[styles.intro, isEditingNumber && styles.editingIntro]}>
+              <OnboardingMascot size={isEditingNumber ? 64 : heroSize} reaction={error ? 'retry' : 'welcome'} cue={step} />
+              <Text style={styles.description}>How old are you?</Text>
               <TextInput
-                accessibilityLabel="Height in centimeters"
+                accessibilityLabel="Your age"
                 style={styles.input}
-                value={cm}
-                onChangeText={(v) => { setCm(v); setError(''); }}
-                placeholder="cm"
+                value={age}
+                onChangeText={(v) => { setAge(v); setError(''); }}
+                placeholder="Enter your age"
                 placeholderTextColor="#6b6b72"
                 keyboardAppearance="dark"
                 keyboardType="number-pad"
                 maxLength={3}
-                onSubmitEditing={submitHeight}
+                onSubmitEditing={submitAge}
               />
-            )}
-            <ErrorText text={error} />
-            <PrimaryButton label="Continue  →" onPress={submitHeight} />
-          </View>
-        )}
+              <ErrorText text={error} />
+              <PrimaryButton label="Continue  →" onPress={submitAge} />
+            </View>
+          )}
 
-        {step === 'weight' && (
-          <View style={styles.intro}>
-            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
-            <Text style={styles.question}>How much do you weigh?</Text>
-            <UnitToggle units={units} onChange={setUnits} />
-            <TextInput
-              accessibilityLabel="Your weight"
-              style={styles.input}
-              value={weight}
-              onChangeText={(v) => { setWeight(v); setError(''); }}
-              placeholder={units === 'imperial' ? 'lbs' : 'kg'}
-              placeholderTextColor="#6b6b72"
-              keyboardAppearance="dark"
-              keyboardType="decimal-pad"
-              maxLength={5}
-              onSubmitEditing={submitWeight}
-            />
-            <ErrorText text={error} />
-            <PrimaryButton label="Continue  →" onPress={submitWeight} />
-          </View>
-        )}
+          {step === 'gender' && (
+            <View style={styles.intro}>
+              <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
+              <Text style={styles.question}>What&apos;s your gender?</Text>
+              <Text style={styles.subtle}>Used to estimate your calorie needs.</Text>
+              <Choices options={GENDERS} selected={sex} onPick={(v) => { setSex(v); go('height'); }} />
+            </View>
+          )}
 
-        {step === 'goal' && (
-          <View style={styles.intro}>
-            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
-            <Text style={styles.question}>What&apos;s your main goal?</Text>
-            <Choices options={GOALS} selected={goal} onPick={pickGoal} />
-          </View>
-        )}
+          {step === 'height' && (
+            <View style={[styles.intro, isEditingNumber && styles.editingIntro]}>
+              <OnboardingMascot size={isEditingNumber ? 64 : mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
+              <Text style={styles.question}>How tall are you?</Text>
+              <UnitToggle units={units} onChange={setUnits} />
+              {units === 'imperial' ? (
+                <View style={styles.row}>
+                  <TextInput
+                    accessibilityLabel="Feet"
+                    style={[styles.input, styles.flex]}
+                    value={feet}
+                    onChangeText={(v) => { setFeet(v); setError(''); }}
+                    placeholder="ft"
+                    placeholderTextColor="#6b6b72"
+                    keyboardAppearance="dark"
+                    keyboardType="number-pad"
+                    maxLength={1}
+                  />
+                  <TextInput
+                    accessibilityLabel="Inches"
+                    style={[styles.input, styles.flex]}
+                    value={inches}
+                    onChangeText={(v) => { setInches(v); setError(''); }}
+                    placeholder="in"
+                    placeholderTextColor="#6b6b72"
+                    keyboardAppearance="dark"
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    onSubmitEditing={submitHeight}
+                  />
+                </View>
+              ) : (
+                <TextInput
+                  accessibilityLabel="Height in centimeters"
+                  style={styles.input}
+                  value={cm}
+                  onChangeText={(v) => { setCm(v); setError(''); }}
+                  placeholder="cm"
+                  placeholderTextColor="#6b6b72"
+                  keyboardAppearance="dark"
+                  keyboardType="number-pad"
+                  maxLength={3}
+                  onSubmitEditing={submitHeight}
+                />
+              )}
+              <ErrorText text={error} />
+              <PrimaryButton label="Continue  →" onPress={submitHeight} />
+            </View>
+          )}
 
-        {step === 'sport' && (
-          <View style={styles.intro}>
-            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
-            <Text style={styles.question}>Which sport?</Text>
-            <Choices options={SPORTS} selected={sport} onPick={(v) => { setSport(v); go('level'); }} />
-          </View>
-        )}
+          {step === 'weight' && (
+            <View style={[styles.intro, isEditingNumber && styles.editingIntro]}>
+              <OnboardingMascot size={isEditingNumber ? 64 : mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
+              <Text style={styles.question}>How much do you weigh?</Text>
+              <UnitToggle units={units} onChange={setUnits} />
+              <TextInput
+                accessibilityLabel="Your weight"
+                style={styles.input}
+                value={weight}
+                onChangeText={(v) => { setWeight(v); setError(''); }}
+                placeholder={units === 'imperial' ? 'lbs' : 'kg'}
+                placeholderTextColor="#6b6b72"
+                keyboardAppearance="dark"
+                keyboardType="decimal-pad"
+                maxLength={5}
+                onSubmitEditing={submitWeight}
+              />
+              <ErrorText text={error} />
+              <PrimaryButton label="Continue  →" onPress={submitWeight} />
+            </View>
+          )}
 
-        {step === 'level' && (
-          <View style={styles.intro}>
-            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
-            <Text style={styles.question}>How experienced are you?</Text>
-            <Choices options={LEVELS} selected={level} onPick={(v) => { setLevel(v); go('results'); }} />
-          </View>
-        )}
+          {step === 'goal' && (
+            <View style={styles.intro}>
+              <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
+              <Text style={styles.question}>What&apos;s your main goal?</Text>
+              <Choices options={GOALS} selected={goal} onPick={pickGoal} />
+            </View>
+          )}
 
-        {step === 'results' && matches.length > 0 && (
-          <View style={styles.list}>
-            <OnboardingMascot size={mascotSize} reaction="celebrate" cue={step} />
-            <Text style={styles.resultsLabel}>Your coach</Text>
-            <Text style={styles.subtleLeft}>Tap any coach to start chatting.</Text>
-            <CoachCard match={matches[0]} highlight onPress={openChat} />
+          {step === 'sport' && (
+            <View style={styles.intro}>
+              <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
+              <Text style={styles.question}>Which sport?</Text>
+              <Choices options={SPORTS} selected={sport} onPick={(v) => { setSport(v); go('level'); }} />
+            </View>
+          )}
 
-            <Text style={[styles.resultsLabel, styles.spaced]}>Also a good fit</Text>
-            {matches.slice(1, 3).map((m) => <CoachCard key={m.coach.id} match={m} onPress={openChat} />)}
+          {step === 'level' && (
+            <View style={styles.intro}>
+              <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
+              <Text style={styles.question}>How experienced are you?</Text>
+              <Choices options={LEVELS} selected={level} onPick={(v) => { setLevel(v); go('results'); }} />
+            </View>
+          )}
 
-            <Text style={[styles.resultsLabel, styles.spaced]}>All coaches</Text>
-            {matches.slice(3).map((m) => <CoachCard key={m.coach.id} match={m} onPress={openChat} />)}
+          {step === 'results' && matches.length > 0 && (
+            <View style={styles.list}>
+              <OnboardingMascot size={mascotSize} reaction="celebrate" cue={step} />
+              <Text style={styles.resultsLabel}>Your coach</Text>
+              <Text style={styles.subtleLeft}>Tap any coach to start chatting.</Text>
+              <CoachCard match={matches[0]} highlight onPress={openChat} />
 
-            <Text style={styles.summary}>
-              {age} yrs · {Math.round(heightCm)} cm · {Math.round(weightKg)} kg · {sex}
-            </Text>
-            <Pressable onPress={() => go('age')} accessibilityRole="button" style={styles.editAge}>
-              <Text style={styles.editAgeText}>Start over</Text>
-            </Pressable>
-          </View>
-        )}
-      </ScrollView>
+              <Text style={[styles.resultsLabel, styles.spaced]}>Also a good fit</Text>
+              {matches.slice(1, 3).map((m) => <CoachCard key={m.coach.id} match={m} onPress={openChat} />)}
+
+              <Text style={[styles.resultsLabel, styles.spaced]}>All coaches</Text>
+              {matches.slice(3).map((m) => <CoachCard key={m.coach.id} match={m} onPress={openChat} />)}
+
+              <Text style={styles.summary}>
+                {age} yrs · {Math.round(heightCm)} cm · {Math.round(weightKg)} kg · {sex}
+              </Text>
+              <Pressable onPress={() => go('age')} accessibilityRole="button" style={styles.editAge}>
+                <Text style={styles.editAgeText}>Start over</Text>
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -377,6 +399,8 @@ const styles = StyleSheet.create({
   backText: { color: '#a0a0a6', fontSize: 15 },
   progressTrack: { height: 4, backgroundColor: '#2a2a2e', borderRadius: 2, marginTop: 16 },
   progressFill: { height: 4, backgroundColor: '#f5f5f5', borderRadius: 2 },
+  numericContent: { paddingBottom: 72 },
+  editingIntro: { paddingVertical: 12 },
   intro: { flexGrow: 1, justifyContent: 'center', paddingVertical: 32 },
   description: { color: '#b0b0b5', fontSize: 18, marginTop: 0, marginBottom: 24, textAlign: 'center' },
   question: { color: '#f5f5f5', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
