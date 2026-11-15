@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -152,6 +152,9 @@ export default function HomeScreen() {
     finish(n);
   }
 
+  // Lets the keyboard's Next key on the feet box jump to inches.
+  const inchesRef = useRef<ComponentRef<typeof TextInput>>(null);
+
   function pickGoal(g: Goal) {
     setGoal(g);
     if (g === 'sport_performance') go('sport');
@@ -209,6 +212,7 @@ export default function HomeScreen() {
                 keyboardAppearance="dark"
                 keyboardType="number-pad"
                 maxLength={3}
+                returnKeyType="next"
                 onSubmitEditing={submitAge}
               />
               <ErrorText text={error} />
@@ -242,6 +246,8 @@ export default function HomeScreen() {
                     keyboardAppearance="dark"
                     keyboardType="number-pad"
                     maxLength={1}
+                    returnKeyType="next"
+                    onSubmitEditing={() => inchesRef.current?.focus()}
                   />
                   <TextInput
                     accessibilityLabel="Inches"
@@ -253,6 +259,8 @@ export default function HomeScreen() {
                     keyboardAppearance="dark"
                     keyboardType="number-pad"
                     maxLength={2}
+                    ref={inchesRef}
+                    returnKeyType="next"
                     onSubmitEditing={submitHeight}
                   />
                 </View>
@@ -267,6 +275,7 @@ export default function HomeScreen() {
                   keyboardAppearance="dark"
                   keyboardType="number-pad"
                   maxLength={3}
+                  returnKeyType="next"
                   onSubmitEditing={submitHeight}
                 />
               )}
@@ -290,6 +299,7 @@ export default function HomeScreen() {
                 keyboardAppearance="dark"
                 keyboardType="decimal-pad"
                 maxLength={5}
+                returnKeyType="next"
                 onSubmitEditing={submitWeight}
               />
               <ErrorText text={error} />
@@ -355,6 +365,7 @@ export default function HomeScreen() {
                 keyboardAppearance="dark"
                 keyboardType="number-pad"
                 maxLength={3}
+                returnKeyType="done"
                 onSubmitEditing={submitTime}
               />
               <View style={styles.quickRow}>
