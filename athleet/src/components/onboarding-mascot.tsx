@@ -5,19 +5,96 @@ import { AccessibilityInfo, Animated, AppState, Easing, Platform, StyleSheet, Vi
 import { mascotArt, type MascotPose } from './mascot-art';
 
 type Reaction = 'welcome' | 'encourage' | 'retry' | 'celebrate';
-const frames = [0, 0.2, 0.4, 0.6, 0.8, 1];
-const still = [0, 0, 0, 0, 0, 0];
-// A quiet beat at the end gives every gesture a natural pause before repeating.
+const keyframes = [0, 0.12, 0.23, 0.36, 0.49, 0.62, 0.73, 0.85, 1];
+const still = keyframes.map(() => 0);
+
+// Sample smooth curves once so the same easing can run on the native Animated driver and on web.
+const samplesPerSegment = 10;
+const segments = keyframes.slice(0, -1).flatMap((start, index) => {
+  const span = keyframes[index + 1] - start;
+  return Array.from({ length: samplesPerSegment }, (_, sample) => {
+    const t = sample / samplesPerSegment;
+    return { index, span, t, time: start + t * span };
+  });
+});
+const frames = [...segments.map(({ time }) => time), 1];
+
+function smoothTrack(poses: number[]) {
+  const slopes = poses.slice(1).map((pose, i) => (pose - poses[i]) / (keyframes[i + 1] - keyframes[i]));
+  const tangents = [0, ...slopes.slice(1).map((next, i) => {
+    const previous = slopes[i];
+    // Ease to zero at a reversal or hold. Carry speed through poses moving in the same direction.
+    return previous * next > 0 ? 2 * previous * next / (previous + next) : 0;
+  }), 0];
+
+  return [...segments.map(({ index, span, t }) => {
+    const ease = t * t * (3 - 2 * t);
+    const remaining = 1 - t;
+    return poses[index] * (1 - ease) + poses[index + 1] * ease
+      + span * t * remaining * (remaining * tangents[index] - t * tangents[index + 1]);
+  }), poses[poses.length - 1]];
+}
+
+// Let the body lead, with arms, head, and props following at their own pace.
 const gestures = {
-  age: { body: [0, -3, 0, -2, 0, 0], head: [0, -5, 2, -3, 0, 0], left: still, right: [0, 18, -12, 18, 0, 0], prop: still },
-  gender: { body: [0, -2, -2, 0, 0, 0], head: [0, 6, -4, 0, 0, 0], left: [0, 12, 0, 0, 0, 0], right: [0, -12, 0, 0, 0, 0], prop: still },
-  height: { body: [0, -9, -9, -3, 0, 0], head: [0, -6, -6, 0, 0, 0], left: still, right: [0, -8, -8, 0, 0, 0], prop: still },
-  weight: { body: [0, 3, 0, 3, 0, 0], head: [0, -4, 4, 0, 0, 0], left: [0, -10, 10, 0, 0, 0], right: [0, -10, 10, 0, 0, 0], prop: still },
-  goal: { body: [0, -4, 0, 0, 0, 0], head: [0, -7, -7, 0, 0, 0], left: still, right: [0, -12, -4, -12, 0, 0], prop: [0, -8, 0, -8, 0, 0] },
-  sport: { body: [0, 5, 0, 5, 0, 0], head: [0, 4, 0, 4, 0, 0], left: [0, -8, 0, -8, 0, 0], right: [0, 10, 0, 10, 0, 0], prop: [0, 47, 0, 47, 0, 0] },
-  level: { body: [0, -3, 0, -3, 0, 0], head: [0, -3, 3, 0, 0, 0], left: [0, 18, 10, 18, 0, 0], right: [0, -18, -10, -18, 0, 0], prop: still },
-  results: { body: [0, -20, 0, -12, 0, 0], head: [0, -6, 6, 0, 0, 0], left: [0, 15, -6, 15, 0, 0], right: [0, -15, 6, -15, 0, 0], prop: [0, -12, 5, -8, 0, 0] },
+  age: {
+    body: [0, 2, -4, -3, -2, -3, 1, 0, 0], stretch: [0, -3, 2, 1, 0, 1, -1, 0, 0],
+    head: [0, 2, -6, -5, 1, -4, -1, 0, 0],
+    left: [0, 0, 3, 5, 3, 4, -2, 0, 0], right: [0, -6, 24, -14, 20, -8, 5, 0, 0], prop: still,
+  },
+  gender: {
+    body: [0, 2, -2, -4, -2, 1, 0, 0, 0], stretch: [0, -2, 1, 2, 1, -1, 0, 0, 0],
+    head: [0, -3, 7, 9, 3, -4, -1, 0, 0],
+    left: [0, -3, 13, 16, 11, -3, -1, 0, 0], right: [0, 2, -6, -15, -12, 3, 1, 0, 0], prop: still,
+  },
+  height: {
+    body: [0, 3, -5, -10, -10, -5, 2, 0, 0], stretch: [0, -4, 2, 5, 5, 2, -2, 0, 0],
+    head: [0, 2, -3, -8, -7, -3, 2, 0, 0],
+    left: [0, 1, 3, 4, 2, 1, -2, 0, 0], right: [0, 4, -3, -10, -10, -5, 3, 0, 0], prop: still,
+  },
+  weight: {
+    body: [0, 5, -3, 4, -2, 2, -1, 0, 0], stretch: [0, -5, 3, -4, 2, -2, 1, 0, 0],
+    head: [0, -2, 6, 2, -6, -2, 1, 0, 0],
+    left: [0, -3, -14, 3, 9, 3, -2, 0, 0], right: [0, 3, 7, 13, -5, -7, 2, 0, 0], prop: still,
+  },
+  goal: {
+    body: [0, 3, -4, -5, -2, -3, 1, 0, 0], stretch: [0, -3, 3, 2, 0, 1, -1, 0, 0],
+    head: [0, -2, 6, 9, 5, 7, -2, 0, 0],
+    left: [0, 2, -3, -5, -3, -4, 1, 0, 0], right: [0, 7, -19, -11, -6, -14, 4, 0, 0],
+    prop: [0, 0, -3, -12, -8, -11, -3, 0, 0],
+  },
+  sport: {
+    body: [0, 2, 5, -3, 1, 4, -2, 0, 0], stretch: [0, -2, -4, 3, -1, -3, 2, 0, 0],
+    head: [0, -2, 5, 1, -4, 4, -1, 0, 0],
+    left: [0, 2, -9, -3, 2, -7, -2, 0, 0], right: [0, -6, 18, -4, -7, 15, -4, 0, 0],
+    prop: [0, -7, 48, 0, -8, 38, 1, 0, 0],
+  },
+  level: {
+    body: [0, 2, -5, -3, -1, -4, 1, 0, 0], stretch: [0, -3, 3, 2, 0, 2, -2, 0, 0],
+    head: [0, 3, -4, -6, 4, -2, 2, 0, 0],
+    left: [0, -4, 22, 15, 11, 19, -4, 0, 0], right: [0, 3, -13, -23, -12, -19, 5, 0, 0], prop: still,
+  },
+  results: {
+    body: [0, 6, -23, -12, 5, -13, 2, 0, 0], stretch: [0, -5, 5, 2, -5, 3, -2, 0, 0],
+    head: [0, 3, -4, -8, 6, -5, 3, 0, 0],
+    left: [0, -7, 18, 23, -5, 15, 4, 0, 0], right: [0, 6, -22, -15, 5, -16, -2, 0, 0],
+    prop: [0, 0, -9, -16, -6, -11, -4, 0, 0],
+  },
+  retry: {
+    body: [0, 1, 2, 1, 2, 1, 0, 0, 0], stretch: [0, -1, -2, -1, -2, -1, 0, 0, 0],
+    head: [0, 2, -8, 7, -5, 2, -1, 0, 0],
+    left: still, right: still, prop: still,
+  },
 };
+
+const motionTracks = Object.fromEntries(Object.entries(gestures).map(([pose, gesture]) => [pose, {
+  body: smoothTrack(gesture.body),
+  stretch: smoothTrack(gesture.stretch).map(value => 1 + value / 100),
+  head: smoothTrack(gesture.head).map(value => `${value}deg`),
+  left: smoothTrack(gesture.left).map(value => `${value}deg`),
+  right: smoothTrack(gesture.right).map(value => `${value}deg`),
+  prop: smoothTrack(gesture.prop),
+}]));
 
 export function OnboardingMascot({
   size, reaction, cue,
@@ -61,7 +138,7 @@ export function OnboardingMascot({
 
     const animation = Animated.loop(Animated.timing(progress, {
       toValue: 1,
-      duration: cue === 'sport' ? 2600 : 3400,
+      duration: reaction === 'retry' ? 2200 : cue === 'sport' ? 2500 : 3100,
       easing: Easing.linear,
       useNativeDriver: Platform.OS !== 'web',
       isInteraction: false,
@@ -71,10 +148,9 @@ export function OnboardingMascot({
   }, [cue, progress, reaction, reduceMotion, foreground]);
 
   const art = mascotArt[cue];
-  const gesture = gestures[cue];
-  const translate = (values: number[]) => progress.interpolate({ inputRange: frames, outputRange: values.map(v => v * size / 320) });
-  const rotate = (values: number[]) => progress.interpolate({ inputRange: frames, outputRange: values.map(v => `${v}deg`) });
-  const retry = reaction === 'retry';
+  const motion = motionTracks[reaction === 'retry' ? 'retry' : cue];
+  const interpolate = <T extends number | string,>(outputRange: T[]) => progress.interpolate({ inputRange: frames, outputRange });
+  const translate = (values: number[]) => interpolate(values.map(value => value * size / 320));
 
   return (
     <View
@@ -85,28 +161,29 @@ export function OnboardingMascot({
       pointerEvents="none"
       style={[styles.stage, { width: size, height: size }]}>
       <Animated.View style={[StyleSheet.absoluteFill, {
-        transform: [{ translateY: translate(retry ? still : gesture.body) }],
+        transformOrigin: '50% 91%',
+        transform: [{ translateY: translate(motion.body) }, { scaleY: interpolate(motion.stretch) }],
       }]}>
         <Animated.View style={[StyleSheet.absoluteFill, {
-          transformOrigin: '36% 57%', transform: [{ rotate: rotate(retry ? still : gesture.left) }],
+          transformOrigin: '36% 57%', transform: [{ rotate: interpolate(motion.left) }],
         }]}>
           <Image source={art.left} style={styles.image} contentFit="contain" />
         </Animated.View>
         <Animated.View style={[StyleSheet.absoluteFill, {
-          transformOrigin: '63% 57%', transform: [{ rotate: rotate(retry ? still : gesture.right) }],
+          transformOrigin: '63% 57%', transform: [{ rotate: interpolate(motion.right) }],
         }]}>
           <Image source={art.right} style={styles.image} contentFit="contain" />
         </Animated.View>
         <Image source={art.body} style={styles.image} contentFit="contain" />
         <Animated.View style={[StyleSheet.absoluteFill, {
           transformOrigin: '50% 55%',
-          transform: [{ rotate: rotate(retry ? [0, -6, 6, -4, 0, 0] : gesture.head) }],
+          transform: [{ rotate: interpolate(motion.head) }],
         }]}>
           <Image source={art.face} style={styles.image} contentFit="contain" />
         </Animated.View>
       </Animated.View>
       <Animated.View style={[StyleSheet.absoluteFill, {
-        transform: [{ translateY: translate(retry ? still : gesture.prop) }],
+        transform: [{ translateY: translate(motion.prop) }],
       }]}>
         <Image source={art.prop} style={styles.image} contentFit="contain" />
       </Animated.View>
