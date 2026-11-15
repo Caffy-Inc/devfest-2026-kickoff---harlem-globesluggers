@@ -34,7 +34,7 @@ export default function TabLayout() {
         name="recap"
         options={{
           title: 'Weekly Recap',
-          href: selected ? '/recap' : null,
+          href: selected ? ('/recap' as any) : null,
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📅</Text>,
         }}
       />
@@ -43,7 +43,7 @@ export default function TabLayout() {
         options={{
           title: 'Your Meals',
           // Meals come with the plan, so this also waits for a selection.
-          href: selected ? '/my-meals' : null,
+          href: selected ? ('/my-meals' as any) : null,
           tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🥗</Text>,
         }}
       />
