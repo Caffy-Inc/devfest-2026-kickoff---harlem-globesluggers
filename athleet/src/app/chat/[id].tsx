@@ -131,7 +131,7 @@ export default function ChatScreen() {
         {messages.length <= 1 && (
           <View style={styles.quickRow}>
             {QUICK_PROMPTS.map((q) => (
-              <Pressable key={q} style={styles.quick} onPress={() => send(q)} accessibilityRole="button">
+              <Pressable key={q} style={styles.quick} onPress={() => (q === QUICK_PROMPTS[0] ? openPlan() : send(q))} accessibilityRole="button">
                 <Text style={styles.quickText}>{q}</Text>
               </Pressable>
             ))}

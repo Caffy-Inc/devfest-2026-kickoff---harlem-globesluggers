@@ -1,18 +1,16 @@
 import { Image } from 'expo-image';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { wordmarkImage } from '@/components/athleet-wordmark';
-import { CoachAvatar } from '@/components/coach-avatar';
 import { OnboardingMascot } from '@/components/onboarding-mascot';
-import { COACHES } from '@/data/coaches';
-import { rankCoaches } from '@/lib/match';
+import { MAX_MINUTES, recommendedDays } from '@/lib/plan';
 import { setProfile } from '@/lib/profile-store';
 import type { Goal, Level, Sex } from '@/lib/types';
 
-type Step = 'age' | 'gender' | 'height' | 'weight' | 'goal' | 'sport' | 'level' | 'results';
+type Step = 'age' | 'gender' | 'height' | 'weight' | 'goal' | 'sport' | 'level' | 'days' | 'time';
 type Units = 'imperial' | 'metric';
 type Option<T> = { value: T; label: string; hint?: string };
 
@@ -43,7 +41,19 @@ const LEVELS: Option<Level>[] = [
   { value: 'advanced', label: 'Advanced', hint: '2+ years of serious training' },
 ];
 
-const ORDER: Step[] = ['age', 'gender', 'height', 'weight', 'goal', 'sport', 'level', 'results'];
+const ORDER: Step[] = ['age', 'gender', 'height', 'weight', 'goal', 'sport', 'level', 'days', 'time'];
+
+const DAY_HINTS: Record<string, string> = {
+  '1': 'Bare minimum',
+  '2': 'Light schedule',
+  '3': 'Full recovery between sessions',
+  '4': 'Balanced training and rest',
+  '5': 'Serious training',
+  '6': 'All in, one rest day',
+  '7': 'Every day',
+};
+
+const QUICK_MINUTES = [30, 45, 60, 90];
 
 
 export default function HomeScreen() {
@@ -63,27 +73,24 @@ export default function HomeScreen() {
   const [goal, setGoal] = useState<Goal | null>(null);
   const [sport, setSport] = useState('general');
   const [level, setLevel] = useState<Level | null>(null);
+  const [days, setDays] = useState<number | null>(null);
+  const [minutes, setMinutes] = useState('');
 
   const heightCm =
     units === 'imperial' ? (Number(feet) * 12 + Number(inches || 0)) * 2.54 : Number(cm);
   const weightKg = units === 'imperial' ? Number(weight) * 0.4536 : Number(weight);
 
-  const matches = useMemo(
-    () =>
-      goal && level
-        ? rankCoaches({ age: Number(age), goal, sport, level }, COACHES)
-        : [],
-    [age, goal, sport, level]
-  );
-
-  function openChat(coachId: string) {
-    if (sex && goal && level) {
-      setProfile({
-        age: Number(age), sex, heightCm: Math.round(heightCm), weightKg: Math.round(weightKg),
-        goal, sport, level, daysPerWeek: 4, sessionMinutes: 60, equipment: 'full_gym', injuries: 'none',
-      });
-    }
-    router.push({ pathname: '/chat/[id]' as any, params: { id: coachId } });
+  function finish(sessionMinutes: number) {
+    if (!sex || !goal || !level) return;
+    setProfile({
+      age: Number(age), sex, heightCm: Math.round(heightCm), weightKg: Math.round(weightKg),
+      goal, sport, level,
+      daysPerWeek: days ?? recommendedDays(level, Number(age)),
+      sessionMinutes,
+      equipment: 'full_gym', injuries: 'none',
+    });
+    Keyboard.dismiss();
+    router.replace('/coaches');
   }
 
   function go(next: Step) {
@@ -114,6 +121,14 @@ export default function HomeScreen() {
     go('goal');
   }
 
+  function submitTime() {
+    const n = Number(minutes);
+    if (!/^\d+$/.test(minutes) || n < 1 || n > MAX_MINUTES) {
+      return setError(`Please enter minutes between 1 and ${MAX_MINUTES}.`);
+    }
+    finish(n);
+  }
+
   function pickGoal(g: Goal) {
     setGoal(g);
     if (g === 'sport_performance') go('sport');
@@ -137,11 +152,9 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {step !== 'results' && (
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-          </View>
-        )}
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        </View>
 
         {step === 'age' && (
           <View style={styles.intro}>
@@ -265,29 +278,59 @@ export default function HomeScreen() {
           <View style={styles.intro}>
             <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
             <Text style={styles.question}>How experienced are you?</Text>
-            <Choices options={LEVELS} selected={level} onPick={(v) => { setLevel(v); go('results'); }} />
+            <Choices options={LEVELS} selected={level} onPick={(v) => { setLevel(v); go('days'); }} />
           </View>
         )}
 
-        {step === 'results' && matches.length > 0 && (
-          <View style={styles.list}>
-            <OnboardingMascot size={mascotSize} reaction="celebrate" cue={step} />
-            <Text style={styles.resultsLabel}>Your coach</Text>
-            <Text style={styles.subtleLeft}>Tap any coach to start chatting.</Text>
-            <CoachCard match={matches[0]} highlight onPress={openChat} />
-
-            <Text style={[styles.resultsLabel, styles.spaced]}>Also a good fit</Text>
-            {matches.slice(1, 3).map((m) => <CoachCard key={m.coach.id} match={m} onPress={openChat} />)}
-
-            <Text style={[styles.resultsLabel, styles.spaced]}>All coaches</Text>
-            {matches.slice(3).map((m) => <CoachCard key={m.coach.id} match={m} onPress={openChat} />)}
-
-            <Text style={styles.summary}>
-              {age} yrs · {Math.round(heightCm)} cm · {Math.round(weightKg)} kg · {sex}
+        {step === 'days' && level && (
+          <View style={styles.intro}>
+            <OnboardingMascot size={mascotSize} reaction="encourage" cue="level" />
+            <Text style={styles.question}>How many days a week do you want to train?</Text>
+            <Text style={styles.subtle}>
+              Most people at your level do {recommendedDays(level, Number(age))}. Pick what fits your life.
             </Text>
-            <Pressable onPress={() => go('age')} accessibilityRole="button" style={styles.editAge}>
-              <Text style={styles.editAgeText}>Start over</Text>
-            </Pressable>
+            <Choices
+              options={['1', '2', '3', '4', '5', '6', '7'].map((d) => ({
+                value: d,
+                label: `${d} ${d === '1' ? 'day' : 'days'}`,
+                hint: DAY_HINTS[d],
+              }))}
+              selected={days ? String(days) : null}
+              onPick={(v) => { setDays(Number(v)); go('time'); }}
+            />
+          </View>
+        )}
+
+        {step === 'time' && (
+          <View style={styles.intro}>
+            <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'celebrate'} cue="results" />
+            <Text style={styles.question}>How long do you want each session to be?</Text>
+            <Text style={styles.subtle}>In minutes.</Text>
+            <TextInput
+              accessibilityLabel="Minutes per session"
+              style={styles.input}
+              value={minutes}
+              onChangeText={(v) => { setMinutes(v.replace(/[^0-9]/g, '')); setError(''); }}
+              placeholder="minutes"
+              placeholderTextColor="#6b6b72"
+              keyboardAppearance="dark"
+              keyboardType="number-pad"
+              maxLength={3}
+              onSubmitEditing={submitTime}
+            />
+            <View style={styles.quickRow}>
+              {QUICK_MINUTES.map((m) => (
+                <Pressable
+                  key={m}
+                  onPress={() => { setMinutes(String(m)); setError(''); }}
+                  style={[styles.quickChip, minutes === String(m) && styles.quickChipOn]}
+                  accessibilityRole="button">
+                  <Text style={[styles.quickChipText, minutes === String(m) && styles.quickChipTextOn]}>{m} min</Text>
+                </Pressable>
+              ))}
+            </View>
+            <ErrorText text={error} />
+            <PrimaryButton label="Meet my coaches  →" onPress={submitTime} />
           </View>
         )}
       </ScrollView>
@@ -344,32 +387,12 @@ function ErrorText({ text }: { text: string }) {
   return text ? <Text style={styles.error}>{text}</Text> : null;
 }
 
-function CoachCard({
-  match, highlight, onPress,
-}: { match: ReturnType<typeof rankCoaches>[number]; highlight?: boolean; onPress: (id: string) => void }) {
-  const { coach, fitsAge, reasons } = match;
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.section, pressed && styles.pressed]}
-      onPress={() => onPress(coach.id)}
-      accessibilityRole="button"
-      accessibilityLabel={`Chat with ${coach.name}`}>
-      <View style={[styles.card, highlight && styles.cardHighlight, !fitsAge && styles.cardDim]}>
-        <CoachAvatar coach={coach} size={highlight ? 72 : 60} />
-        <View style={styles.cardText}>
-          <Text style={styles.category}>{coach.category}</Text>
-          <Text style={styles.name}>{coach.name}</Text>
-          <Text style={styles.tagline}>{coach.tagline}</Text>
-          {reasons.length > 0 && <Text style={styles.tags}>{reasons.join(' · ')}</Text>}
-          {!fitsAge && <Text style={styles.tags}>Not ideal for your age</Text>}
-        </View>
-        <Text style={styles.chevron}>›</Text>
-      </View>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
+  quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 12 },
+  quickChip: { borderWidth: 1, borderColor: '#3a3a40', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: '#1a1a1d' },
+  quickChipOn: { backgroundColor: '#f5f5f5', borderColor: '#f5f5f5' },
+  quickChipText: { color: '#d0d0d5', fontSize: 14, fontWeight: '600' },
+  quickChipTextOn: { color: '#0d0d0f' },
   screen: { flex: 1, backgroundColor: '#0d0d0f' },
   content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 48 },
   header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: '#2a2a2e', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

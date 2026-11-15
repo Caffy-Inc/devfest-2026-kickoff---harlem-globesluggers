@@ -1,5 +1,7 @@
-import type { ChatMessage, Coach, UserProfile, WeeklyPlan } from '@/lib/types';
-import { generateAdaptedPlan } from './baseline-engine';
+import type { ChatMessage, Coach, UserProfile } from '@/lib/types';
+import { getCoach } from '@/data/coaches';
+import { PROGRAMS } from '@/data/workouts';
+import { adaptationsFor, generatePlan as buildCoachPlan, recommendedDays } from '@/lib/plan';
 
 // Set EXPO_PUBLIC_API_URL in a .env file once the backend is deployed,
 // e.g. EXPO_PUBLIC_API_URL=https://athleet-api.vercel.app
@@ -116,8 +118,52 @@ export async function generatePlan(
   // Artificial short delay so the user feels the generation happen on click
   await new Promise((r) => setTimeout(r, 600));
 
-  // Run the baseline adaptation algorithm across all 7 coaches & user parameters
-  return generateAdaptedPlan(request, seed);
+  // Build the personalized plan on-device from the coach's training style.
+  return localPlan(request, seed);
+}
+
+function localPlan(req: GeneratePlanRequest, seed: number): GeneratePlanResponse {
+  const coach = getCoach(req.coachId);
+  if (!coach) throw new Error(`Unknown coach: ${req.coachId}`);
+
+  const profile: UserProfile = {
+    name: req.name,
+    age: req.age,
+    sex: req.sex,
+    heightCm: req.heightCm,
+    weightKg: req.weightKg,
+    goal: req.goal as UserProfile['goal'],
+    sport: req.sport ?? 'general',
+    level: req.level,
+    daysPerWeek: req.daysPerWeek || recommendedDays(req.level, req.age),
+    sessionMinutes: req.sessionMinutes ?? 60,
+    equipment: req.equipment ?? 'full_gym',
+    injuries: req.injuries ?? 'none',
+  };
+  const plan = buildCoachPlan(coach, profile, seed);
+  const program = PROGRAMS[coach.id];
+
+  return {
+    title: `${coach.name.split(' ')[0]}'s week for you`,
+    coachId: coach.id,
+    coachMessage: plan.why,
+    why: plan.why,
+    days: plan.days.map((d, i) => ({
+      name: `Day ${i + 1} — ${d.name}`,
+      focus: d.focus,
+      warmUp: d.warmup,
+      exercises: d.exercises,
+      coolDown: d.cooldown,
+      estimatedMinutes: d.minutes,
+    })),
+    nutrition: { summary: plan.nutrition.summary, tips: plan.nutrition.tips },
+    recovery: {
+      summary: `Rest days: ${plan.restDays?.join(', ')}. ${program.cooldown}.`,
+      tips: ['Sleep 8+ hours', 'Light walk or mobility on rest days', 'If something hurts, back off and see a professional'],
+    },
+    restDays: plan.restDays,
+    notes: adaptationsFor(profile).join(' | '),
+  };
 }
 
 function normalizePlanResponse(raw: any, req: GeneratePlanRequest): GeneratePlanResponse {
@@ -176,11 +222,15 @@ async function demoReply(coach: Coach, profile: UserProfile | null, messages: Ch
   if (/plan|week|routine|program|workout/.test(last)) {
     const days = coach.signature.split;
     const staples = coach.signature.staples.slice(0, 3).join(', ');
-    return `Here's how we structure your training: ${days}. Our bread and butter will be ${staples}. Tap 'View Workout Plan' above anytime to see your personalized routine!`;
+    return `Here's how we structure your training: ${days}. Our bread and butter will be ${staples}. Tap Plan at the top anytime to see every set and rep, scaled to you.`;
   }
   if (/eat|food|diet|meal|protein|calorie/.test(last)) {
-    return `Nutrition is key. Focus on lean protein at every meal, complex carbs for training fuel, and lots of water. ${coach.signature.recovery[0]}.`;
+    return `Nutrition is key. Focus on lean protein at every meal, complex carbs for training fuel, and lots of water. ${capitalize(coach.signature.recovery[0])}.`;
   }
   const level = profile?.level ? ` for a ${profile.level}` : '';
   return `Love that energy! As your ${first}-style coach${level}, my priority is ${coach.signature.methods[0]}. Ask me for your weekly plan or training advice!`;
+}
+
+function capitalize(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

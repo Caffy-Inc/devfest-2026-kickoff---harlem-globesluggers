@@ -10,3 +10,8 @@ export function setProfile(p: UserProfile) {
 export function getProfile(): UserProfile | null {
   return current;
 }
+
+/** Merge changes into the saved profile (no-op if onboarding wasn't finished). */
+export function updateProfile(changes: Partial<UserProfile>) {
+  if (current) current = { ...current, ...changes };
+}
