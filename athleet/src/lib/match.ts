@@ -10,16 +10,19 @@ export function rankCoaches(input: MatchInput, coaches: Coach[]): Match[] {
       let score = 0;
       const reasons: string[] = [];
 
-      const fitsAge = input.age >= coach.ageFit[0] && input.age <= coach.ageFit[1];
-      if (fitsAge) score += 2;
-      else score -= 5;
+      // Training for a sport always gets that sport's athlete, at any age.
+      // The plan itself is made easier for young or older athletes.
+      const sportMatch = input.goal === 'sport_performance' && coach.sport === input.sport;
+      const inAgeRange = input.age >= coach.ageFit[0] && input.age <= coach.ageFit[1];
+      const fitsAge = inAgeRange || sportMatch;
+      if (inAgeRange) score += 2;
+      else if (!sportMatch) score -= 5;
 
-      if (input.goal === 'sport_performance') {
-        if (coach.sport === input.sport) {
-          score += 6;
-          reasons.push(`${coach.category} specialist`);
-        }
-      } else if (coach.goals.includes(input.goal)) {
+      if (sportMatch) {
+        score += 100;
+        reasons.push(`${coach.category} specialist`);
+        if (!inAgeRange) reasons.push(input.age < coach.ageFit[0] ? 'adapted for young athletes' : 'adapted for your age');
+      } else if (input.goal !== 'sport_performance' && coach.goals.includes(input.goal)) {
         score += 4;
         reasons.push(GOAL_REASON[input.goal]);
       }

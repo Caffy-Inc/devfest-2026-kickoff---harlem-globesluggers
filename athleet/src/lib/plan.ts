@@ -95,6 +95,8 @@ type Context = {
   goal: Goal;
   age: number;
   minor: boolean;
+  kid: boolean;
+  senior: boolean;
   useEasier: boolean;
   lowImpact: boolean;
   bmi: number;
@@ -107,6 +109,8 @@ function contextFor(p: UserProfile): Context {
     goal: p.goal,
     age: p.age,
     minor: p.age < 18,
+    kid: p.age < 13,
+    senior: p.age >= 70,
     useEasier: p.level === 'beginner' || p.age < 16 || p.age >= 65,
     lowImpact: p.age >= 60 || bmi >= 32 || (p.age >= 50 && p.level === 'beginner'),
     bmi,
@@ -120,7 +124,9 @@ const isFatLoss = (g: Goal) => g === 'lose_fat' || g === 'cut';
 function defaultReps(kind: ExerciseKind, c: Context): string {
   switch (kind) {
     case 'main':
+      if (c.kid) return '10-12';
       if (c.minor) return '8-10';
+      if (c.senior) return '10-12';
       if (c.goal === 'get_stronger') return c.level === 'beginner' ? '6-8' : '4-6';
       if (c.goal === 'sport_performance') return c.level === 'beginner' ? '6-8' : '4-6';
       if (isMuscle(c.goal)) return c.level === 'beginner' ? '8-10' : '6-10';
@@ -157,6 +163,7 @@ function defaultSets(kind: ExerciseKind, c: Context): number {
     default: return 1; // sprint / skill / conditioning / mobility carry their volume in "reps"
   }
   if (c.age >= 50) sets -= 1;
+  if (c.kid || c.senior) sets = Math.min(sets, 2);
   if (c.age >= 40 && kind === 'power') sets -= 1;
   return Math.max(2, sets);
 }
@@ -172,6 +179,25 @@ function restFor(kind: ExerciseKind, c: Context): string {
   }
 }
 
+// Under-13s: swap barbells and machines for bodyweight versions of the same movement.
+const KID_SWAPS: [RegExp, string][] = [
+  [/leg press|back squat|front squat|pause squat|box squat|goblet squat|barbell back squat/i, 'Bodyweight squat'],
+  [/split squat|lunge|step-up/i, 'Bodyweight lunge'],
+  [/trap bar deadlift|kettlebell deadlift|^deadlift|romanian deadlift|good morning/i, 'Glute bridge'],
+  [/hip thrust/i, 'Single-leg glute bridge'],
+  [/power clean|kettlebell swing/i, 'Broad jump'],
+  [/bench press|incline dumbbell press|dumbbell press|close-grip|dumbbell fly|cable fly|dips/i, 'Push-up'],
+  [/shoulder press|landmine/i, 'Pike push-up'],
+  [/barbell row|t-bar row|cable row|dumbbell row|lat pulldown|pull-up|assisted pull-up/i, 'Inverted row'],
+  [/curl|triceps|pushdown|lateral raise|rear delt|leg curl|leg extension|calf raise|abduction|knee drive/i, 'Bear crawl'],
+  [/ab rollout|hanging leg raise|cable crunch/i, 'Dead bug'],
+];
+
+function kidVersion(name: string): string | null {
+  for (const [re, swap] of KID_SWAPS) if (re.test(name)) return swap;
+  return null;
+}
+
 const KEEP_CUSTOM_WHEN_SWAPPED: ExerciseKind[] = ['core', 'skill', 'mobility'];
 
 function buildExercise(t: TemplateExercise, c: Context): PlanExercise {
@@ -184,6 +210,14 @@ function buildExercise(t: TemplateExercise, c: Context): PlanExercise {
   } else if (c.useEasier && t.easier) {
     name = t.easier;
     swap = 'easier';
+  }
+
+  if (c.kid && (t.kind === 'main' || t.kind === 'accessory' || t.kind === 'core' || t.kind === 'power')) {
+    const kid = kidVersion(name);
+    if (kid) {
+      name = kid;
+      swap = 'easier';
+    }
   }
 
   const custom = t.reps ? (typeof t.reps === 'string' ? t.reps : t.reps[c.level]) : undefined;
@@ -210,7 +244,9 @@ function buildExercise(t: TemplateExercise, c: Context): PlanExercise {
 
   const notes: string[] = [];
   if (t.notes && swap === 'none') notes.push(t.notes);
-  if (kind === 'main' && c.minor) notes.push('Technique first, no max lifts');
+  if (kind === 'main' && c.kid) notes.push('Bodyweight or a very light weight, perfect form');
+  else if (kind === 'main' && c.minor) notes.push('Technique first, no max lifts');
+  if (kind === 'main' && c.senior) notes.push('Slow and controlled; hold onto support if needed');
   if (kind === 'main' && c.age >= 50) notes.push('Leave 2-3 reps in the tank');
   if (kind === 'main' && c.level === 'beginner' && !c.minor) notes.push('Pick a weight you could lift 2-3 more times');
 
@@ -244,7 +280,9 @@ function whyText(coach: Coach, p: UserProfile, c: Context, days: number): string
   if (days > suggested) parts.push("That's ambitious for your level, so listen to your body and take an extra rest day if you're sore.");
   else if (days < suggested) parts.push('Fewer days means every session counts, so show up for each one.');
 
-  if (c.minor) parts.push("You're still growing: we focus on technique and skills, never max lifts.");
+  if (c.kid) parts.push("You're young, so we keep it light: bodyweight, good technique and lots of skill work. Have fun with it!");
+  else if (c.minor) parts.push("You're still growing: we focus on technique and skills, never max lifts.");
+  if (c.senior) parts.push('We keep it gentle: low impact, balance and control, with fewer sets.');
   else if (p.age >= 50) parts.push('Extra warm-up time, a bit less volume and more recovery keep your joints happy.');
   if (c.lowImpact) parts.push("I've swapped high-impact jumps and sprints for joint-friendly versions.");
   if (c.useEasier && !c.minor && p.age < 65) parts.push('Some lifts start with easier variations until your technique is solid.');
@@ -259,7 +297,9 @@ function whyText(coach: Coach, p: UserProfile, c: Context, days: number): string
 export function adaptationsFor(profile: UserProfile): string[] {
   const c = contextFor(profile);
   const out: string[] = [];
-  if (c.minor) out.push('Youth technique focus');
+  if (c.kid) out.push('Kid-friendly, light loads');
+  else if (c.minor) out.push('Youth technique focus');
+  if (c.senior) out.push('70+ gentle volume');
   if (profile.age >= 45 && profile.age < 60) out.push('40+ extra warm-up');
   if (profile.age >= 60) out.push('60+ joint care');
   if (c.lowImpact) out.push('Low-impact swaps');

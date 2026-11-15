@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { dayTotals, groceryList, type MealPlan, type PlannedMeal } from '@/lib/meal-plan';
@@ -34,10 +34,12 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) 
   const [showGroceries, setShowGroceries] = useState(false);
 
   // A new plan (regenerate, new coach, new settings) resets swaps.
-  useEffect(() => {
+  const [seenPlan, setSeenPlan] = useState(mealPlan);
+  if (seenPlan !== mealPlan) {
+    setSeenPlan(mealPlan);
     setPicks(mealPlan ? mealPlan.slots.map(() => 0) : []);
     setOpenMeal(null);
-  }, [mealPlan]);
+  }
 
   const chosen: PlannedMeal[] = useMemo(
     () => (mealPlan ? mealPlan.slots.map((s, i) => s.options[picks[i] ?? 0] ?? s.options[0]) : []),
@@ -87,7 +89,7 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) 
       </View>
       {showNumbers && (
         <Text style={styles.totalsLine}>
-          Today's menu: {totals.kcal.toLocaleString()} kcal · {totals.protein}g protein · {totals.carbs}g carbs ·{' '}
+          {"Today's menu: "}{totals.kcal.toLocaleString()} kcal · {totals.protein}g protein · {totals.carbs}g carbs ·{' '}
           {totals.fat}g fat
         </Text>
       )}
