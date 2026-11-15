@@ -1,4 +1,4 @@
-import type { ChatMessage, Coach, UserProfile } from '@/lib/types';
+import type { ChatMessage, Coach, UserProfile , NutritionTargets } from '@/lib/types';
 import { getCoach } from '@/data/coaches';
 import { hypeLine } from '@/data/hype';
 import { SUGGESTION_ANSWERS } from '@/data/suggestions';
@@ -6,7 +6,7 @@ import { PROGRAMS } from '@/data/workouts';
 import { adaptationsFor, generatePlan as buildCoachPlan, recommendedDays } from '@/lib/plan';
 import { buildMealPlan, type MealPlan } from '@/lib/meal-plan';
 import { computeTargets } from '@/lib/nutrition';
-import type { NutritionTargets } from '@/lib/types';
+
 
 // Set EXPO_PUBLIC_API_URL in a .env file once the backend is deployed,
 // e.g. EXPO_PUBLIC_API_URL=https://athleet-api.vercel.app
