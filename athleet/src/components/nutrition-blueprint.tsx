@@ -29,7 +29,7 @@ const TAG_LABEL: Record<string, string> = {
  * average grocery cost, swappable alternatives and a weekly shopping list.
  */
 export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) {
-  const [picks, setPicks] = useState<number[]>([]);
+  const [picks, setPicks] = useState<number[]>(() => (mealPlan ? mealPlan.slots.map(() => 0) : []));
   const [openMeal, setOpenMeal] = useState<number | null>(null);
   const [showGroceries, setShowGroceries] = useState(false);
 
@@ -70,7 +70,8 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) 
 
   function swap(slotIndex: number) {
     const count = mealPlan!.slots[slotIndex].options.length;
-    setPicks((p) => p.map((v, i) => (i === slotIndex ? (v + 1) % count : v)));
+    // Build from the slots, not the old picks, so a missing entry can't swallow the tap.
+    setPicks((p) => mealPlan!.slots.map((_, i) => (i === slotIndex ? ((p[i] ?? 0) + 1) % count : p[i] ?? 0)));
   }
 
   return (
