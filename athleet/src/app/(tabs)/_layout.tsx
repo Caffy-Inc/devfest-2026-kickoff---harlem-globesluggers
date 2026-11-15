@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 
+import { PLAN_TABS, TAB_COLORS } from '@/components/plan-tab-bar';
 import { useSelectedPlan } from '@/lib/selected-plan';
 
 export default function TabLayout() {
@@ -9,44 +10,23 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: '#0d0d0f' },
-        tabBarStyle: { backgroundColor: '#0d0d0f', borderTopColor: '#2a2a2e' },
-        tabBarActiveTintColor: '#f5f5f5',
-        tabBarInactiveTintColor: '#6b6b72',
+        sceneStyle: { backgroundColor: TAB_COLORS.background },
+        tabBarStyle: { backgroundColor: TAB_COLORS.background, borderTopColor: TAB_COLORS.border },
+        tabBarActiveTintColor: TAB_COLORS.active,
+        tabBarInactiveTintColor: TAB_COLORS.inactive,
       }}>
-      <Tabs.Screen
-        name="coaches"
-        options={{
-          title: 'Coaches',
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>💬</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="my-plan"
-        options={{
-          title: 'Your Plan',
-          // Only shows up once a plan has been selected.
-          href: selected ? '/my-plan' : null,
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📋</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="recap"
-        options={{
-          title: 'Workout Plan',
-          href: selected ? ('/recap' as any) : null,
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>📅</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="my-meals"
-        options={{
-          title: 'Your Meals',
-          // Meals come with the plan, so this also waits for a selection.
-          href: selected ? ('/my-meals' as any) : null,
-          tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>🥗</Text>,
-        }}
-      />
+      {PLAN_TABS.map(tab => (
+        <Tabs.Screen
+          key={tab.name}
+          name={tab.name}
+          options={{
+            title: tab.title,
+            // Plan, workouts and meals only show up once a plan has been selected.
+            href: !tab.needsPlan || selected ? (tab.href as any) : null,
+            tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>{tab.icon}</Text>,
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

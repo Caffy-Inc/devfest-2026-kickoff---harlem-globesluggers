@@ -81,7 +81,13 @@ function subscribe(listener: () => void) {
   };
 }
 
+// The server (web static rendering) can't see the device's saved plan, so hydration must
+// start from "no plan" to match its HTML; React then re-renders with the saved plan.
+function getServerSnapshot(): SelectedPlan | null {
+  return null;
+}
+
 /** Re-renders when a plan is selected, changed, or finishes loading from storage. */
 export function useSelectedPlan(): SelectedPlan | null {
-  return useSyncExternalStore(subscribe, getSelectedPlan, getSelectedPlan);
+  return useSyncExternalStore(subscribe, getSelectedPlan, getServerSnapshot);
 }
