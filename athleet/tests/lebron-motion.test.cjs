@@ -41,3 +41,21 @@ test('transitions ease to rest at both endpoints', () => {
   assert.equal(easeInOut(.5), .5);
   assert.ok(easeInOut(.01) < .001 && 1 - easeInOut(.99) < .001);
 });
+
+test('every roster coach has distinct SVG art and all animated layers', () => {
+  const { COACHES } = load(path.resolve(__dirname, '../src/data/coaches.ts'));
+  const { coachArt, coachPortraits } = load(path.resolve(__dirname, '../src/components/coach-art.ts'));
+  const heads = new Set();
+  for (const coach of COACHES) {
+    const art = coachArt[coach.id];
+    assert.ok(art, `Missing character for ${coach.id}`);
+    for (const layer of ['head', 'eyes', 'brows', 'mouth', 'body', 'left', 'right', 'leftThigh', 'rightThigh', 'leftShin', 'rightShin', 'leftShoe', 'rightShoe', 'detail', 'confetti']) {
+      const svg = decodeURIComponent(art[layer].uri.split(',')[1]);
+      assert.ok(svg.startsWith('<svg') && svg.endsWith('</svg>'), `${coach.id}: ${layer}`);
+      assert.ok(!/undefined|NaN/.test(svg));
+    }
+    assert.ok(coachPortraits[coach.id]);
+    heads.add(art.head.uri);
+  }
+  assert.equal(heads.size, COACHES.length);
+});

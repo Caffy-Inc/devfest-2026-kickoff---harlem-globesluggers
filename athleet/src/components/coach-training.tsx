@@ -2,8 +2,7 @@ import { Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CoachAvatar } from '@/components/coach-avatar';
-import { LeBronCoach } from '@/components/lebron-coach';
+import { AnimatedCoach } from '@/components/animated-coach';
 import { PlanView, type PlanParams } from '@/components/plan-view';
 import { CoachWorkout } from '@/components/coach-workout';
 import { useCoachSpeech } from '@/hooks/use-coach-speech';
@@ -64,7 +63,7 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
   return <SafeAreaView style={styles.screen} edges={['bottom']}>
     <Stack.Screen options={{ headerShown: true, title: `${coach.name.split(' ')[0]} · Train together`, headerStyle: { backgroundColor: '#14130f' }, headerTintColor: '#ffda62', headerBackTitle: 'Coaches' }} />
     <KeyboardAvoidingView style={styles.shell} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
-      {coach.id === 'lebron' ? <LeBronCoach compact motion={speech.speaking ? 'talking' : busy ? 'thinking' : complete && workout ? 'celebrate' : 'idle'} speechAnimation={speech.animation} /> : <View style={styles.avatar}><CoachAvatar coach={coach} size={64} /></View>}
+      <AnimatedCoach coach={coach} compact motion={speech.speaking ? 'talking' : busy ? 'thinking' : complete && workout ? 'celebrate' : 'idle'} speechAnimation={speech.animation} />
       <View style={styles.coachBar}>
         <Text style={styles.message} accessibilityLiveRegion="polite" numberOfLines={asking ? undefined : 3}>{busy ? 'Coach is thinking…' : message}</Text>
         <View style={styles.row}>

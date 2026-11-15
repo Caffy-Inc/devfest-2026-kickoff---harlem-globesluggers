@@ -26,8 +26,8 @@ export function coachPose(time: number, motion: CoachMotion, reduced: boolean, s
   return {
     body: (1 - Math.cos(squat * .918)) * 56 + (celebrating ? track(tracks.celebrate, t, 3.1) : track(tracks.breathe, t, 3.1)),
     head: motion === 'thinking' ? 8 + track(tracks.nod, t, 3.1) : track(tracks.nod, t, 3.1) * .5 + (talking && !reduced ? speech.emphasis * 3 : 0),
-    left: celebrating ? 145 + track(tracks.wave, t, 3.1) * .3 : squat * 65 + (talking ? 12 + (reduced ? 0 : speech.emphasis * 12) : 0),
-    right: celebrating ? -145 - track(tracks.wave, t, 3.1) * .3 : motion === 'thinking' ? -38 : -squat * 65 - (talking ? 12 + (reduced ? 0 : speech.emphasis * 16) : 0),
+    left: celebrating ? 110 + track(tracks.wave, t, 3.1) * .3 : squat * 65 + (talking ? 12 + (reduced ? 0 : speech.emphasis * 12) : 0),
+    right: celebrating ? -110 - track(tracks.wave, t, 3.1) * .3 : motion === 'thinking' ? -38 : -squat * 65 - (talking ? 12 + (reduced ? 0 : speech.emphasis * 16) : 0),
     knee: squat * .918 * 180 / Math.PI,
     eyes: Math.max(.06, 1 - blink * .94 - (celebrating ? .15 : talking ? speech.smile * .12 : 0)),
     mouth: talking ? .12 + speech.open * .88 : celebrating ? .9 : .14,

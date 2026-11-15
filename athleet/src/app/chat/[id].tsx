@@ -5,8 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CoachTraining } from '@/components/coach-training';
 import type { PlanParams } from '@/components/plan-view';
 import { useSelectedPlan } from '@/lib/selected-plan';
-import { CoachAvatar } from '@/components/coach-avatar';
-import { LeBronCoach } from '@/components/lebron-coach';
+import { AnimatedCoach } from '@/components/animated-coach';
 import { PLAN_PROMPT, suggestionsFor } from '@/data/suggestions';
 import { getCoach } from '@/data/coaches';
 import { useCoachSpeech } from '@/hooks/use-coach-speech';
@@ -63,7 +62,7 @@ function CoachSession({ id, parameters }: { id: string; parameters: PlanParams &
     'Consistency beats a perfect week. How many days can you make time to train?',
     'We’ll make every minute count. How long do you have for each session?',
     'Great. Where will you train? I’ll match your exercises to the equipment you have.',
-    coach?.id === 'lebron' ? 'Let’s visit the movement lab. Watch a slow squat: hips back, chest tall, then stand. This preview is optional.' : `Our foundation is ${coach?.signature.methods[0] ?? 'consistent training'}. Start with your warm-up and focus on controlled movement.`,
+    'Let’s visit the movement lab. Watch a slow squat: hips back, chest tall, then stand. This preview is optional.',
     `That's your first win! ${days} days a week, ${minutes} minutes a session. Let's turn your goal into a plan you can follow.`,
   ];
   const prompt = prompts[step];
@@ -108,7 +107,7 @@ function CoachSession({ id, parameters }: { id: string; parameters: PlanParams &
           <View style={styles.progressRow}><Text style={styles.eyebrow}>BUILD YOUR GAME PLAN</Text><Text style={styles.counter}>{step + 1} / {LABELS.length}</Text></View>
           <View style={styles.progress} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 6, now: step + 1 }}>{LABELS.map((label, i) => <View key={label} style={[styles.segment, i <= step && styles.segmentDone]} />)}</View>
           <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
-            {id === 'lebron' ? <LeBronCoach motion={motion} speechAnimation={speech.animation} /> : <View style={styles.avatar}><CoachAvatar coach={coach} size={112} /><Text style={styles.subtitle}>{speech.speaking ? 'Coach is speaking…' : coach.tagline}</Text></View>}
+            <AnimatedCoach coach={coach} motion={motion} speechAnimation={speech.animation} />
             <View style={styles.content}>
               <View style={styles.sectionRow}><Text style={styles.eyebrow}>STEP {step + 1} · {LABELS[step].toUpperCase()}</Text><Pressable accessibilityRole="button" accessibilityLabel={enabled ? 'Turn voice off' : 'Turn voice on'} onPress={() => { if (enabled) stop(); else void speak(reply || prompt); speech.setEnabled(!enabled); }}><Text style={styles.voice}>{enabled ? '♫ Voice on' : '♫ Voice off'}</Text></Pressable></View>
               <Text style={styles.title}>{['What’s your next win?', 'Make room for progress.', 'Find your training window.', 'Set your home court.', 'See it. Then feel it.', 'Your game plan starts here.'][step]}</Text>
@@ -119,13 +118,13 @@ function CoachSession({ id, parameters }: { id: string; parameters: PlanParams &
                 {step === 1 && [2, 3, 4, 5, 6].map(n => option(n, `${n} days a week`, '◷', days === n, () => setDays(n)))}
                 {step === 2 && [20, 30, 45, 60, 90].map(n => option(n, `${n} minutes`, '◷', minutes === n, () => setMinutes(n)))}
                 {step === 3 && EQUIPMENT.map(e => option(e.value, e.label, e.icon, equipment === e.value, () => setEquipment(e.value)))}
-                {step === 4 && <View style={styles.lesson}><Text style={styles.lessonTitle}>{id === 'lebron' ? 'BODYWEIGHT SQUAT' : 'YOUR TRAINING FOUNDATION'}</Text><Text style={styles.subtitle}>{id === 'lebron' ? 'Feet comfortably apart. Lower with control. Keep your heels grounded and stand tall.' : coach.signature.methods.join(' · ')}</Text>{id === 'lebron' && <Pressable style={styles.demo} accessibilityRole="button" onPress={() => { stop(); setExercise(!exercise); scroll.current?.scrollTo({ y: 0, animated: true }); }}><Text style={styles.selectedText}>{exercise ? 'Ⅱ Pause demonstration' : '▶ Watch the movement'}</Text></Pressable>}<Text style={styles.note}>Watch or follow at your own pace. Skip any movement that feels uncomfortable.</Text></View>}
+                {step === 4 && <View style={styles.lesson}><Text style={styles.lessonTitle}>BODYWEIGHT SQUAT</Text><Text style={styles.subtitle}>Feet comfortably apart. Lower with control. Keep your heels grounded and stand tall.</Text><Pressable style={styles.demo} accessibilityRole="button" onPress={() => { stop(); setExercise(!exercise); scroll.current?.scrollTo({ y: 0, animated: true }); }}><Text style={styles.selectedText}>{exercise ? 'Ⅱ Pause demonstration' : '▶ Watch the movement'}</Text></Pressable><Text style={styles.note}>Watch or follow at your own pace. Skip any movement that feels uncomfortable.</Text></View>}
                 {step === 5 && <View style={styles.lesson}><Text style={styles.success}>✓ SESSION COMPLETE</Text><Text style={styles.summary}>{goalLabel}</Text><Text style={styles.subtitle}>{days} days / week  ·  {minutes} min / session</Text><Text style={styles.subtitle}>{EQUIPMENT.find(e => e.value === equipment)?.label}</Text><Text style={styles.note}>Your full routine is next. Review it and save it to Your Plan.</Text></View>}
               </View>
               <Pressable accessibilityRole="button" onPress={() => setAsking(!asking)}><Text style={styles.link}>{asking ? '− Close question' : '+ Ask coach a question'}</Text></Pressable>
               {asking && <View style={styles.inputRow}><TextInput accessibilityLabel="Question for your coach" style={styles.input} value={input} onChangeText={setInput} placeholder="What’s on your mind?" placeholderTextColor="#a49a80" returnKeyType="send" onSubmitEditing={() => void ask()} /><Pressable disabled={busy || !input.trim()} accessibilityRole="button" accessibilityLabel="Send question" onPress={() => void ask()} style={[styles.send, (busy || !input.trim()) && styles.disabled]}><Text style={styles.ctaText}>↑</Text></Pressable></View>}
               {asking && !busy && <View style={styles.options}>{suggestionsFor(id, messages.filter(m => m.role === 'user').map(m => m.content)).map(question => <Pressable key={question} accessibilityRole="button" onPress={() => question === PLAN_PROMPT ? (canContinue && step === 5 ? openPlan() : setAsking(false)) : void ask(question)}><Text style={styles.link}>{question}</Text></Pressable>)}</View>}
-              {id === 'lebron' && <Text style={styles.disclosure}>LeBron-inspired demo character · device voice</Text>}
+              <Text style={styles.disclosure}>{coach.name}-inspired demo character · device voice</Text>
             </View>
           </ScrollView>
           <View style={styles.footer}>{step > 0 && <Pressable style={styles.back} accessibilityRole="button" onPress={() => changeStep(step - 1)}><Text style={styles.backText}>Back</Text></Pressable>}<Pressable disabled={!canContinue} accessibilityRole="button" accessibilityState={{ disabled: !canContinue }} style={[styles.cta, !canContinue && styles.disabled]} onPress={() => step === 5 ? openPlan() : changeStep(step + 1)}><Text style={styles.ctaText}>{step === 5 ? 'BUILD MY PLAN  →' : step === 4 ? 'GOT IT. LET’S GO  →' : 'CONTINUE  →'}</Text></Pressable></View>
