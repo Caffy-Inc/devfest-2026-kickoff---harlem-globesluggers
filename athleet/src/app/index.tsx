@@ -23,7 +23,7 @@ export default function HomeScreen() {
             <Text accessibilityRole="header" style={styles.welcomeTitle}>Welcome to Athleet</Text>
           </View>
           <OnboardingMascot size={Math.min(width - 48, height * 0.45, 360)} reaction="welcome" cue="start" />
-          <Pressable style={styles.button} onPress={() => router.push('/questionnaire')} accessibilityRole="button">
+          <Pressable style={styles.button} onPress={() => router.push('/questionnaire' as any)} accessibilityRole="button">
             <Text style={styles.buttonText}>Get started  →</Text>
           </Pressable>
         </View>

@@ -36,7 +36,7 @@ export default function CoachesScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <HomeLogo style={styles.logo} />
-          <Pressable onPress={() => router.replace('/questionnaire')} accessibilityRole="button" hitSlop={8}>
+          <Pressable onPress={() => router.replace('/questionnaire' as any)} accessibilityRole="button" hitSlop={8}>
             <Text style={styles.link}>Edit my answers</Text>
           </Pressable>
         </View>
