@@ -1,10 +1,9 @@
-import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
-import { wordmarkImage } from '@/components/athleet-wordmark';
+import { HomeLogo } from '@/components/home-logo';
 import { OnboardingMascot } from '@/components/onboarding-mascot';
 import { MAX_MINUTES, recommendedDays } from '@/lib/plan';
 import { setProfile } from '@/lib/profile-store';
@@ -116,6 +115,13 @@ export default function HomeScreen() {
     setStep(next);
   }
 
+  // Logo tap on the home screen itself: jump back to the welcome step.
+  function goHome() {
+    Keyboard.dismiss();
+    setError('');
+    setStep('start');
+  }
+
   function back() {
     let i = ORDER.indexOf(step) - 1;
     if (ORDER[i] === 'sport' && goal !== 'sport_performance') i -= 1;
@@ -166,7 +172,7 @@ export default function HomeScreen() {
           keyboardDismissMode={isNumericStep ? 'none' : 'on-drag'}
         >
           <View style={styles.header}>
-            <Image source={wordmarkImage} style={styles.logo} accessible accessibilityLabel="Athleet" contentFit="contain" />
+            <HomeLogo style={styles.logo} onPress={goHome} />
             {step !== 'start' && (
               <Pressable onPress={back} accessibilityRole="button">
                 <Text style={styles.backText}>← Back</Text>

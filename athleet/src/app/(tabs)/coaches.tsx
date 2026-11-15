@@ -1,10 +1,9 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { wordmarkImage } from '@/components/athleet-wordmark';
+import { HomeLogo } from '@/components/home-logo';
 import { CoachCard } from '@/components/coach-card';
 import { COACHES } from '@/data/coaches';
 import { rankCoaches } from '@/lib/match';
@@ -35,7 +34,7 @@ export default function CoachesScreen() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Image source={wordmarkImage} style={styles.logo} accessible accessibilityLabel="Athleet" contentFit="contain" />
+          <HomeLogo style={styles.logo} />
           <Pressable onPress={() => router.replace('/')} accessibilityRole="button" hitSlop={8}>
             <Text style={styles.link}>Edit my answers</Text>
           </Pressable>

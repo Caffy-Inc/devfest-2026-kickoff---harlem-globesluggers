@@ -7,11 +7,10 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { wordmarkImage } from '@/components/athleet-wordmark';
+import { HomeLogo } from '@/components/home-logo';
 import { CoachAvatar } from '@/components/coach-avatar';
 import { getCoach } from '@/data/coaches';
 import { generatePlan, type GeneratePlanResponse } from '@/lib/api';
@@ -222,7 +221,7 @@ export function PlanView({ mode = 'preview' }: { mode?: 'preview' | 'saved' }) {
               <Text style={styles.headerBack}>← Back</Text>
             </Pressable>
           )}
-          <Image source={wordmarkImage} style={styles.headerLogo} accessible accessibilityLabel="Athleet" contentFit="contain" />
+          <HomeLogo style={styles.headerLogo} />
         </View>
 
         {/* Feedback notification toast */}
