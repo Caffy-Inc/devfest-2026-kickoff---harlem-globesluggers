@@ -223,17 +223,6 @@ function buildExercise(t: TemplateExercise, c: Context): PlanExercise {
   };
 }
 
-/** Removes repeats created by swaps (e.g. two "Sled push" in one day). */
-function dedupe(exercises: PlanExercise[]): PlanExercise[] {
-  const seen = new Set<string>();
-  return exercises.filter((e) => {
-    const key = e.name.toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 function estimateMinutes(exercises: PlanExercise[], base = 15): number {
   let mins = base; // warm-up + cooldown
   for (const e of exercises) {
@@ -290,14 +279,65 @@ function rotate<T>(items: T[], by: number): T[] {
   return [...items.slice(k), ...items.slice(0, k)];
 }
 
-/** Interleave exercises from several themed days into one full-body day. */
-function mergeTemplates(templates: DayTemplate[]): DayTemplate {
-  const exercises: TemplateExercise[] = [];
-  const longest = Math.max(...templates.map((t) => t.exercises.length));
-  for (let i = 0; i < longest; i++) {
-    for (const t of templates) if (t.exercises[i]) exercises.push(t.exercises[i]);
+type Region = 'legs' | 'push' | 'pull' | 'core' | 'power' | 'cardio' | 'skill' | 'mobility';
+
+/** Which part of the body (or type of work) an exercise trains. */
+export function regionOf(t: TemplateExercise): Region {
+  if (t.kind === 'skill') return 'skill';
+  if (t.kind === 'conditioning' || t.kind === 'sprint') return 'cardio';
+  if (t.kind === 'mobility') return 'mobility';
+  if (t.kind === 'core') return 'core';
+  const n = t.name.toLowerCase();
+  if (/leg press|leg curl|leg extension|squat|lunge|deadlift|step-up|hip thrust|good morning|calf|abduction|clean|cossack|swing|hip extension/.test(n)) return 'legs';
+  if (/row|pull-up|pulldown|curl|rear delt|chin/.test(n)) return 'pull';
+  if (/press|push-up|dip|fly|triceps|pushdown|raise/.test(n)) return 'push';
+  if (t.kind === 'power') return 'power';
+  return 'legs';
+}
+
+// Basic moves used when a coach's style has nothing for that body part (e.g. sprinters, kickers).
+const FALLBACK: Record<'push' | 'pull' | 'core', TemplateExercise> = {
+  push: { name: 'Push-up', kind: 'accessory', easier: 'Incline push-up' },
+  pull: { name: 'Inverted row', kind: 'accessory', easier: 'Band row' },
+  core: { name: 'Plank', kind: 'core', reps: '30-45s' },
+};
+
+/**
+ * Real full-body days (legs, push, pull, core + one coach-style extra), used for 1-2 day plans.
+ * Day A and day B use different exercises where the coach has them.
+ */
+function fullBodyDays(program: (typeof PROGRAMS)[string], count: 1 | 2, sportPick: boolean, seed: number): DayTemplate[] {
+  const keys = Object.keys(program.days).filter((k) => k !== 'recovery');
+  const pool: TemplateExercise[] = [];
+  for (const k of keys) {
+    for (const e of program.days[k].exercises) if (!pool.some((p) => p.name === e.name)) pool.push(e);
   }
-  return { focus: `Full body: ${templates.map((t) => t.focus.split(/[:(]/)[0].trim()).join(' + ')}`, exercises };
+  const of = (r: Region) => {
+    const list = pool.filter((e) => regionOf(e) === r);
+    // Big lifts first.
+    return [...list.filter((e) => e.kind === 'main'), ...list.filter((e) => e.kind !== 'main')];
+  };
+  const pickAt = (list: TemplateExercise[], i: number) => (list.length ? list[(i + seed) % list.length] : undefined);
+
+  const legs = of('legs');
+  const push = of('push');
+  const pull = of('pull');
+  const core = of('core');
+  const extras = sportPick ? [...of('skill'), ...of('power'), ...of('cardio')] : [...of('power'), ...of('cardio'), ...of('skill')];
+
+  return Array.from({ length: count }, (_, d) => {
+    const exercises = [
+      pickAt(legs, d) ?? { name: 'Goblet squat', kind: 'accessory' as const },
+      pickAt(push, d) ?? FALLBACK.push,
+      pickAt(pull, d) ?? FALLBACK.pull,
+      pickAt(legs, d + 1),
+      pickAt(core, d) ?? FALLBACK.core,
+      pickAt(extras, d),
+    ].filter((e): e is TemplateExercise => !!e);
+    const unique = exercises.filter((e, i) => exercises.findIndex((x) => x.name === e.name) === i);
+    const label = count === 2 ? `Full body ${d === 0 ? 'A' : 'B'}` : 'Full body';
+    return { focus: `${label}: legs, push, pull + core`, exercises: unique };
+  });
 }
 
 /** Day templates for 1-7 training days, keeping the coach's style. */
@@ -305,9 +345,7 @@ function dayTemplates(program: (typeof PROGRAMS)[string], days: number, sportPic
   const pick = (n: 3 | 4 | 5 | 6) => rotate((sportPick && program.sportOrder?.[n]) || program.order[n], seed).map((k) => program.days[k]);
   if (days >= 3 && days <= 6) return pick(days as 3 | 4 | 5 | 6);
   if (days === 7) return [...pick(6), RECOVERY_DAY];
-  const base = pick(3);
-  if (days === 1) return [mergeTemplates(base)];
-  return [mergeTemplates([base[0], base[2]]), mergeTemplates([base[1], base[2]])];
+  return fullBodyDays(program, days as 1 | 2, sportPick, seed);
 }
 
 /** Minutes of warm-up + cooldown for a given session length. */
@@ -316,18 +354,37 @@ function warmupMinutes(minutes: number): number {
 }
 
 /** Trim or extend a day so it fits the session length. */
-function fitToTime(exercises: PlanExercise[], minutes: number): PlanExercise[] {
+type Item = { t: TemplateExercise; e: PlanExercise };
+
+/**
+ * Fit a day into the session length without breaking what the day's label promises:
+ * 1) drop extra exercises for a body part that's already covered (from the end),
+ * 2) drop conditioning/skill extras, 3) trim sets, 4) only then drop whole exercises.
+ */
+function fitToTime(items: Item[], minutes: number, minKeep: number): PlanExercise[] {
   const base = warmupMinutes(minutes);
-  const est = (l: PlanExercise[]) => estimateMinutes(l, base);
-  let list = [...exercises];
-  while (list.length > 2 && est(list) > minutes) list = list.slice(0, -1);
-  if (est(list) > minutes) {
-    list = list.map((e) => (e.sets > 2 ? { ...e, sets: e.sets - 1 } : e));
-  }
+  const est = (l: Item[]) => estimateMinutes(l.map((x) => x.e), base);
+  let list = [...items];
+
+  const dropLast = (pred: (x: Item, i: number, all: Item[]) => boolean) => {
+    for (let i = list.length - 1; i > 0; i--) {
+      if (est(list) <= minutes || list.length <= minKeep) return;
+      if (pred(list[i], i, list)) list = list.filter((_, j) => j !== i);
+    }
+  };
+  // 1) repeats of a body part
+  dropLast((x, i, all) => all.some((y, j) => j < i && regionOf(y.t) === regionOf(x.t)));
+  // 2) extras that aren't strength for a body part
+  dropLast((x) => ['cardio', 'skill', 'power', 'mobility'].includes(regionOf(x.t)) && x.t.kind !== 'skill');
+  // 3) fewer sets
+  if (est(list) > minutes) list = list.map((x) => (x.e.sets > 2 ? { ...x, e: { ...x.e, sets: x.e.sets - 1 } } : x));
+  // 4) last resort
+  while (list.length > minKeep && est(list) > minutes) list = list.slice(0, -1);
+
   if (minutes - est(list) >= 25) {
-    list = list.map((e) => (e.sets >= 2 && e.sets < 5 ? { ...e, sets: e.sets + 1 } : e));
+    list = list.map((x) => (x.e.sets >= 2 && x.e.sets < 5 ? { ...x, e: { ...x.e, sets: x.e.sets + 1 } } : x));
   }
-  return list;
+  return list.map((x) => x.e);
 }
 
 export function generatePlan(coach: Coach, profile: UserProfile, seed = 0): WeeklyPlan {
@@ -343,16 +400,18 @@ export function generatePlan(coach: Coach, profile: UserProfile, seed = 0): Week
 
   const planDays: PlanDay[] = templates.map((template, i) => {
     const isRecovery = days === 7 && i === 6;
-    const built = template.exercises.map((t) => buildExercise(t, c));
+    const built: Item[] = template.exercises.map((t) => ({ t, e: buildExercise(t, c) }));
     // Keep the first (main) exercise first; vary the order of the rest on regenerate.
-    let exercises = seed > 0 && built.length > 2 ? [built[0], ...rotate(built.slice(1), seed)] : built;
+    const items = seed > 0 && built.length > 2 ? [built[0], ...rotate(built.slice(1), seed)] : built;
 
     // Fat-loss goals: add the coach's conditioning finisher to days without conditioning.
     const hasConditioning = template.exercises.some((t) => t.kind === 'conditioning' || t.kind === 'sprint');
     if (isFatLoss(profile.goal) && !hasConditioning && !isRecovery) {
-      exercises.push(buildExercise(program.finisher, c));
+      items.push({ t: program.finisher, e: buildExercise(program.finisher, c) });
     }
-    exercises = isRecovery ? dedupe(exercises) : fitToTime(dedupe(exercises), minutes);
+    const unique = items.filter((x, idx) => items.findIndex((y) => y.e.name.toLowerCase() === x.e.name.toLowerCase()) === idx);
+    const fullBody = /^full[ -]body/i.test(template.focus);
+    const exercises = isRecovery ? unique.map((x) => x.e) : fitToTime(unique, minutes, fullBody ? 4 : 2);
 
     let warmup = profile.age >= 45 ? `${program.warmup} (take an extra 5 min)` : program.warmup;
     if (minutes < 30) warmup = '5-min quick warm-up: easy cardio + a light set of your first exercise';

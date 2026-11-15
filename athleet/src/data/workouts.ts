@@ -75,10 +75,11 @@ export const PROGRAMS: Record<string, CoachProgram> = {
         ],
       },
       athletic: {
-        focus: 'Full-body athletic + HIIT',
+        focus: 'Full-body athletic: legs, push, pull + HIIT',
         exercises: [
           { name: 'Trap bar deadlift', kind: 'main', easier: 'Kettlebell deadlift' },
           { name: 'Push-up', kind: 'accessory', easier: 'Incline push-up' },
+          { name: 'Single-arm dumbbell row', kind: 'accessory', reps: '10 each side' },
           { name: 'Lateral lunge', kind: 'accessory' },
           { name: 'HIIT: VersaClimber or bike', kind: 'conditioning', reps: '12 min' },
           { name: 'Plank', kind: 'core', reps: '30-45s' },
@@ -163,6 +164,7 @@ export const PROGRAMS: Record<string, CoachProgram> = {
           { name: 'Lat pulldown', kind: 'accessory' },
           { name: 'Cable fly', kind: 'accessory' },
           { name: 'Cable curl', kind: 'accessory' },
+          { name: 'Cable crunch', kind: 'core' },
         ],
       },
     },
@@ -196,7 +198,7 @@ export const PROGRAMS: Record<string, CoachProgram> = {
         ],
       },
       gym: {
-        focus: 'Gym power',
+        focus: 'Lower-body power + core',
         exercises: [
           { name: 'Box jump', kind: 'power', lowImpact: 'Step-up', notes: 'Quality over height' },
           { name: 'Barbell lunge', kind: 'main', easier: 'Dumbbell split squat' },
@@ -255,10 +257,11 @@ export const PROGRAMS: Record<string, CoachProgram> = {
     finisher: { name: 'Jump rope intervals', kind: 'conditioning', lowImpact: 'Rowing intervals', reps: '10 x 1 min' },
     days: {
       circuit: {
-        focus: 'Full-body circuit (3 rounds)',
+        focus: 'Full-body circuit: legs, push, pull + core (3 rounds)',
         exercises: [
           { name: 'Push-up', kind: 'accessory', easier: 'Incline push-up' },
           { name: 'Bulgarian split squat', kind: 'accessory', easier: 'Split squat' },
+          { name: 'Inverted row', kind: 'accessory', easier: 'Band row' },
           { name: 'Single-leg Romanian deadlift', kind: 'accessory' },
           { name: 'Plank', kind: 'core', reps: '30-60s' },
           { name: 'Jump rope', kind: 'conditioning', lowImpact: 'Rowing machine', reps: '2 min' },
@@ -363,8 +366,11 @@ export const PROGRAMS: Record<string, CoachProgram> = {
         ],
       },
       circuit: {
-        focus: 'Full-body core circuit',
+        focus: 'Full-body circuit: legs, push, pull + core',
         exercises: [
+          { name: 'Goblet squat', kind: 'accessory' },
+          { name: 'Push-up', kind: 'accessory', easier: 'Incline push-up' },
+          { name: 'Dumbbell row', kind: 'accessory' },
           { name: 'Fitness ball transfer', kind: 'core', reps: '10' },
           { name: 'Rolling knee tucks', kind: 'core', reps: '12' },
           { name: 'Resistance band hip extension', kind: 'accessory', reps: '15 each leg' },
