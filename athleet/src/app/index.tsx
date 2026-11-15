@@ -4,7 +4,6 @@ import { router } from 'expo-router';
 
 import { HomeLogo } from '@/components/home-logo';
 import { OnboardingMascot } from '@/components/onboarding-mascot';
-import { useProfile } from '@/lib/profile-store';
 import { useSelectedPlan } from '@/lib/selected-plan';
 
 // Home page — the app's origin route ("/"). The questionnaire lives at /questionnaire.
@@ -12,7 +11,6 @@ export default function HomeScreen() {
   const { height, width } = useWindowDimensions();
   // Saved on the device, so returning users can pick up where they left off.
   const selected = useSelectedPlan();
-  const profile = useProfile();
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -20,6 +18,11 @@ export default function HomeScreen() {
         <View style={styles.header}>
           {/* Already home: the logo is a no-op here. */}
           <HomeLogo style={styles.logo} onPress={() => {}} />
+          {selected && (
+            <Pressable style={styles.myPlanButton} onPress={() => router.push('/my-plan' as any)} accessibilityRole="button">
+              <Text style={styles.myPlanButtonText}>My plan</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.welcome}>
@@ -28,23 +31,9 @@ export default function HomeScreen() {
             <Text accessibilityRole="header" style={styles.welcomeTitle}>Welcome to Athleet</Text>
           </View>
           <OnboardingMascot size={Math.min(width - 48, height * 0.45, 360)} reaction="welcome" cue="start" />
-          {selected || profile ? (
-            <>
-              <Pressable
-                style={styles.button}
-                onPress={() => router.replace((selected ? '/my-plan' : '/coaches') as any)}
-                accessibilityRole="button">
-                <Text style={styles.buttonText}>{selected ? 'Continue to your plan  →' : 'Continue  →'}</Text>
-              </Pressable>
-              <Pressable style={styles.secondaryButton} onPress={() => router.push('/questionnaire' as any)} accessibilityRole="button">
-                <Text style={styles.secondaryButtonText}>Start over</Text>
-              </Pressable>
-            </>
-          ) : (
-            <Pressable style={styles.button} onPress={() => router.push('/questionnaire' as any)} accessibilityRole="button">
-              <Text style={styles.buttonText}>Get started  →</Text>
-            </Pressable>
-          )}
+          <Pressable style={styles.button} onPress={() => router.push('/questionnaire' as any)} accessibilityRole="button">
+            <Text style={styles.buttonText}>Start a new plan  →</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -62,6 +51,6 @@ const styles = StyleSheet.create({
   welcomeTitle: { color: '#24345e', fontSize: 24, fontWeight: '500', textAlign: 'center' },
   button: { backgroundColor: '#f5f5f5', borderRadius: 6, padding: 18, alignItems: 'center', marginTop: 16 },
   buttonText: { color: '#0d0d0f', fontWeight: '700', fontSize: 16 },
-  secondaryButton: { borderRadius: 6, padding: 14, alignItems: 'center', marginTop: 8 },
-  secondaryButtonText: { color: '#9a9aa2', fontWeight: '600', fontSize: 15 },
+  myPlanButton: { borderWidth: 1, borderColor: '#3a3a40', borderRadius: 6, paddingHorizontal: 14, paddingVertical: 8 },
+  myPlanButtonText: { color: '#f5f5f5', fontWeight: '600', fontSize: 14 },
 });
