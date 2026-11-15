@@ -181,7 +181,7 @@ export default function HomeScreen() {
           {step === 'age' && (
             <View style={[styles.intro, isEditingNumber && styles.editingIntro]}>
               <OnboardingMascot size={isEditingNumber ? 64 : heroSize} reaction={error ? 'retry' : 'welcome'} cue={step} />
-              <Text style={styles.description}>How old are you?</Text>
+              <Text style={styles.question}>How old are you?</Text>
               <TextInput
                 accessibilityLabel="Your age"
                 style={styles.input}
@@ -426,7 +426,6 @@ const styles = StyleSheet.create({
   numericContent: { paddingBottom: 72 },
   editingIntro: { paddingVertical: 12 },
   intro: { flexGrow: 1, justifyContent: 'center', paddingVertical: 32 },
-  description: { color: '#b0b0b5', fontSize: 18, marginTop: 0, marginBottom: 24, textAlign: 'center' },
   question: { color: '#f5f5f5', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
   subtle: { color: '#8a8a90', fontSize: 14, marginBottom: 8, textAlign: 'center' },
   row: { flexDirection: 'row', gap: 12 },
