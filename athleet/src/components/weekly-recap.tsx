@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -19,7 +18,6 @@ import {
   isSameDay,
   seedDemoWorkout,
   useWorkoutLogs,
-  type WorkoutLog,
 } from '@/lib/workout-log';
 import { colors } from '@/lib/theme';
 

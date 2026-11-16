@@ -44,7 +44,7 @@ export function WorkoutCalendarModal({ visible, onClose }: Props) {
     const view = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
     const viewYear = view.getFullYear();
     const viewMonth = view.getMonth();
-    const cells = useMemo(() => monthCells(viewYear, viewMonth), [viewYear, viewMonth]);
+    const cells = monthCells(viewYear, viewMonth); // cheap; React Compiler memoizes it
 
     // Workouts grouped by calendar day.
     const logsByDay = useMemo(() => {
@@ -240,7 +240,7 @@ export function WorkoutCalendarModal({ visible, onClose }: Props) {
                                         </View>
                                     </>
                                 ) : (
-                                    <Text style={styles.detailMuted}>You train every day, so there's no rest day to move this to.</Text>
+                                    <Text style={styles.detailMuted}>You train every day, so there&apos;s no rest day to move this to.</Text>
                                 )}
                             </>
                         ) : (

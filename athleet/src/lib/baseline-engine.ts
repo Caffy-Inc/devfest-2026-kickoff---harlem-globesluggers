@@ -19,7 +19,7 @@
  */
 
 import { COACHES, getCoach } from '@/data/coaches';
-import type { Coach, Equipment, Goal, Level, UserProfile } from './types';
+import type { Equipment, Goal, Level } from './types';
 import type { GeneratePlanRequest, GeneratePlanResponse } from './api';
 
 export interface BaselineAdaptation {

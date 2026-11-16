@@ -47,9 +47,18 @@ export default function VoiceSettingsScreen() {
       setCloned(getAllClonedVoices());
       setProblems(getVoiceProblems());
     });
-    refresh(); // also picks up new files in athleet/voices/
-    return unsubscribe;
-  }, [refresh]);
+    // Also picks up new files in athleet/voices/. State is set in the callback, not the effect body.
+    let active = true;
+    refreshSharedVoices()
+      .then((next) => {
+        if (active) setProblems(next);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -165,7 +174,7 @@ function CoachVoiceRow({
     } catch (err: any) {
       setStatus({ state: 'error', message: err?.message || 'Failed' });
     }
-  }, [coachId, samples, consent, coach?.name]);
+  }, [coachId, samples, consent, coach]);
 
   const handleRemove = useCallback(async () => {
     try {
