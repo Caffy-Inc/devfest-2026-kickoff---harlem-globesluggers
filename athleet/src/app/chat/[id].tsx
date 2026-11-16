@@ -7,7 +7,7 @@ import type { PlanParams } from '@/components/plan-view';
 import { useSelectedPlan } from '@/lib/selected-plan';
 import { AnimatedCoach } from '@/components/animated-coach';
 import { PLAN_PROMPT, suggestionsFor } from '@/data/suggestions';
-import { getCoach } from '@/data/coaches';
+import { COACHES, getCoach } from '@/data/coaches';
 import { useCoachSpeech } from '@/hooks/use-coach-speech';
 import { sendChat } from '@/lib/api';
 import { getProfile } from '@/lib/profile-store';
@@ -29,6 +29,12 @@ const EQUIPMENT: { value: Equipment; label: string; icon: string }[] = [
   { value: 'court_or_track', label: 'Court or track', icon: '🏀' },
 ];
 const LABELS = ['Your goal', 'Your week', 'Your time', 'Your space', 'Movement lab', 'Ready to go'];
+
+// For the static GitHub Pages build: write one page per coach (/chat/lebron, …) so links
+// and refreshes work without a server. Ignored by the normal dev server.
+export async function generateStaticParams(): Promise<Record<string, string>[]> {
+  return COACHES.map((coach) => ({ id: coach.id }));
+}
 
 export default function ChatScreen() {
   const params = useLocalSearchParams<PlanParams & { id: string; view?: string; day?: string }>();

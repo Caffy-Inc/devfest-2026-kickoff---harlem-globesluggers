@@ -25,6 +25,31 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Deploy the website (GitHub Pages)
+
+The web app is published to **https://bloxxyis.github.io/devfest-2026-kickoff---harlem-globesluggers/** by the
+workflow in `.github/workflows/deploy-pages.yml`. It runs on every push to `main` that touches `athleet/`
+(or manually from the **Actions** tab), checks types, lint and tests, builds, and deploys.
+
+One-time setup: on GitHub go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+
+Try the exact production build locally first:
+
+```bash
+npm run preview:pages   # builds into dist/ and serves it at http://localhost:8080/devfest-2026-kickoff---harlem-globesluggers/
+```
+
+What's different on GitHub Pages (it only hosts static files):
+
+- The build uses `static` output with the repo name as the base URL (see `app.config.js`). Local
+  development with `npx expo start` is unchanged.
+- The voice API routes (`src/app/api/voice`) can't run there, so coaches use the device's built-in
+  voices and custom voice cloning is unavailable. Everything else (plans, meals, workouts, settings)
+  runs in the browser and saves to the browser's storage.
+- To use a hosted backend, add `EXPO_PUBLIC_API_URL` under **Settings → Secrets and variables →
+  Actions → Variables**. Never put secret keys in `EXPO_PUBLIC_` variables: they end up in the
+  public site.
+
 ## Get a fresh project
 
 When you're ready, run:

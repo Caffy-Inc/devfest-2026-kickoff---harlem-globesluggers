@@ -27,6 +27,8 @@ import { Platform } from 'react-native';
 function apiBase(): string {
   const configured = process.env.EXPO_PUBLIC_VOICE_API_URL;
   if (configured) return configured.replace(/\/+$/, '');
+  // Static hosting (GitHub Pages) has no API routes: skip the server and use device voices.
+  if (process.env.EXPO_PUBLIC_STATIC_SITE === '1') return '';
   if (Platform.OS === 'web' && typeof window !== 'undefined') return window.location.origin;
   const host = Constants.expoConfig?.hostUri?.split('/')[0];
   return host ? `http://${host}` : '';
