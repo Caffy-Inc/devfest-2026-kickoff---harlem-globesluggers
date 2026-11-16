@@ -1,15 +1,31 @@
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DietaryRestrictions } from '@/components/dietary-restrictions';
 import { HomeLogo } from '@/components/home-logo';
 import { NutritionBlueprint } from '@/components/nutrition-blueprint';
-import { useSelectedPlan } from '@/lib/selected-plan';
+import { withMealPlan } from '@/lib/api';
+import { useDietaryRestrictions } from '@/lib/dietary-store';
+import { buildMealPlan } from '@/lib/meal-plan';
+import { useProfile } from '@/lib/profile-store';
+import { useSelectedPlan, type SelectedPlan } from '@/lib/selected-plan';
+import type { RestrictionId } from '@/data/dietary';
+import type { Goal } from '@/lib/types';
 import { colors } from '@/lib/theme';
 
 /** "Your Meals" tab: the Nutrition Blueprint for the selected plan. */
 export default function MyMealsScreen() {
   const selected = useSelectedPlan();
+  const restrictions = useDietaryRestrictions();
+  const profile = useProfile();
+  // Rebuild the menu on-device whenever restrictions change, so every option and swap fits them.
+  const mealPlan = useMemo(
+    () => (selected ? mealPlanFor(selected, restrictions, profile?.goal) : undefined),
+    [selected, restrictions, profile?.goal]
+  );
+
   if (!selected) {
     return (
       <SafeAreaView style={styles.screen}>
@@ -32,15 +48,32 @@ export default function MyMealsScreen() {
           <Text style={styles.headerTitle}>Your meals</Text>
           <HomeLogo style={styles.headerLogo} />
         </View>
+        <DietaryRestrictions selected={restrictions} />
         <NutritionBlueprint
           summary={nutrition.summary}
           tips={nutrition.tips}
           targets={nutrition.targets}
-          mealPlan={nutrition.mealPlan}
+          mealPlan={mealPlan}
         />
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function mealPlanFor(selected: SelectedPlan, restrictions: RestrictionId[], profileGoal?: Goal) {
+  const { plan, request, seed } = selected;
+  if (request) return withMealPlan(plan, request, seed, restrictions).nutrition.mealPlan;
+  const saved = plan.nutrition.mealPlan;
+  const targets = plan.nutrition.targets;
+  if (!targets) return saved;
+  return buildMealPlan({
+    goal: profileGoal ?? 'general_fitness',
+    coachId: selected.coachId,
+    targets,
+    seed,
+    coachTips: plan.nutrition.tips,
+    restrictions,
+  });
 }
 
 const styles = StyleSheet.create({

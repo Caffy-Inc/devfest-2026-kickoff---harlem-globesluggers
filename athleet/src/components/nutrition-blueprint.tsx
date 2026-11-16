@@ -42,10 +42,12 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) 
     setOpenMeal(null);
   }
 
-  const chosen: PlannedMeal[] = useMemo(
+  // undefined for a slot with no recipe that fits the user's dietary restrictions.
+  const perSlot: (PlannedMeal | undefined)[] = useMemo(
     () => (mealPlan ? mealPlan.slots.map((s, i) => s.options[picks[i] ?? 0] ?? s.options[0]) : []),
     [mealPlan, picks]
   );
+  const chosen = useMemo(() => perSlot.filter((m): m is PlannedMeal => !!m), [perSlot]);
   const totals = useMemo(() => dayTotals(chosen), [chosen]);
   const groceries = useMemo(() => groceryList(chosen), [chosen]);
   const checkout = groceries.reduce((s, g) => s + g.checkoutCost, 0);
@@ -98,9 +100,23 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) 
 
       {/* Meals */}
       {mealPlan.slots.map((slot, i) => {
-        const meal = chosen[i];
+        const meal = perSlot[i];
+        if (!meal) {
+          return (
+            <View key={slot.slot} style={styles.meal}>
+              <Text style={styles.slotLabel}>
+                {SLOT_ICON[slot.slot]} {slot.label.toUpperCase()}
+              </Text>
+              <Text style={[styles.slotTiming, { marginTop: 6 }]}>
+                No recipes fit your dietary restrictions for this meal yet. Try loosening a restriction.
+              </Text>
+            </View>
+          );
+        }
         const open = openMeal === i;
         const swaps = slot.options.length - 1;
+        const position = picks[i] ?? 0;
+        const swapsLeft = swaps - position;
         return (
           <View key={slot.slot} style={styles.meal}>
             <View style={styles.mealTop}>
@@ -116,6 +132,7 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) 
               <Chip text={`⏱ ${meal.minutes} min`} />
               {meal.servings !== 1 && <Chip text={`× ${meal.servings} serving`} />}
               {meal.coachPick && <Chip text="★ Coach pick" accent />}
+              {position > 0 && <Chip text={`Swap ${position} of ${swaps}`} />}
               {meal.tags.slice(0, 2).map((t) => (
                 <Chip key={t} text={TAG_LABEL[t] ?? t} />
               ))}
@@ -169,8 +186,10 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) 
                   onPress={() => swap(i)}
                   style={styles.linkBtn}
                   accessibilityRole="button"
-                  accessibilityLabel={`Swap ${slot.label}`}>
-                  <Text style={styles.linkText}>↻ Swap ({swaps} more)</Text>
+                  accessibilityLabel={swapsLeft > 0 ? `Swap ${slot.label}, ${swapsLeft} left` : `Back to first ${slot.label} pick`}>
+                  <Text style={styles.linkText}>
+                    {swapsLeft > 0 ? `↻ Swap (${swapsLeft} left)` : '↺ Back to first pick'}
+                  </Text>
                 </Pressable>
               )}
             </View>

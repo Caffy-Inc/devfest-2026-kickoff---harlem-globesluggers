@@ -1,4 +1,5 @@
 import { INGREDIENTS, PANTRY_COST_PER_SERVING, priceFor, type IngredientId } from '@/data/ingredients';
+import { getRestriction, recipeAllowed, type RestrictionId } from '@/data/dietary';
 import { RECIPES, type MealSlot, type Recipe, type RecipeTag } from '@/data/recipes';
 import type { Goal, NutritionTargets } from '@/lib/types';
 
@@ -36,7 +37,10 @@ export type MealSlotPlan = {
   label: string;
   timing: string;
   targetKcal?: number;
-  /** options[0] is the recommended pick; the rest are swaps. */
+  /**
+   * options[0] is the recommended pick; the rest are swaps (up to MAX_SWAPS).
+   * Empty when no recipe fits the user's dietary restrictions.
+   */
   options: PlannedMeal[];
 };
 
@@ -53,6 +57,8 @@ export type GroceryItem = {
 
 export type MealPlan = {
   showNumbers: boolean;
+  /** Dietary restrictions every recipe in this plan respects. */
+  restrictions?: RestrictionId[];
   slots: MealSlotPlan[];
   /** Totals for the recommended pick in every slot. */
   day: DayTotals;
@@ -75,7 +81,9 @@ const SLOTS: { slot: MealSlot; label: string; timing: string; share: number }[] 
   { slot: 'dinner', label: 'Dinner', timing: 'Evening, 2-3 hrs before bed', share: 0.3 },
 ];
 
-const OPTIONS_PER_SLOT = 3;
+/** Alternatives offered per meal on top of the recommended pick. */
+export const MAX_SWAPS = 5;
+const OPTIONS_PER_SLOT = MAX_SWAPS + 1;
 
 export const PRICE_NOTE =
   'Average U.S. grocery prices (BLS city averages for staples, Aug 2026; store-brand estimates for the rest). ' +
@@ -166,8 +174,8 @@ export function buildMeal(recipe: Recipe, servings: number, coachId?: string): P
 }
 
 /** Rank recipes for a slot by coach style and goal. */
-function rankRecipes(slot: MealSlot, goal: Goal, coachId: string): Recipe[] {
-  const scored = RECIPES.filter((r) => r.slot === slot).map((r) => {
+function rankRecipes(slot: MealSlot, goal: Goal, coachId: string, restrictions: RestrictionId[]): Recipe[] {
+  const scored = RECIPES.filter((r) => r.slot === slot && recipeAllowed(r, restrictions)).map((r) => {
     const n = baseNutrition(r);
     const proteinShare = (n.protein * 4) / Math.max(1, n.kcal); // 0..1
     let score = 0;
@@ -248,15 +256,16 @@ export function buildMealPlan(opts: {
   targets: NutritionTargets;
   seed?: number;
   coachTips?: string[];
+  restrictions?: RestrictionId[];
 }): MealPlan {
-  const { goal, coachId, targets, seed = 0, coachTips = [] } = opts;
+  const { goal, coachId, targets, seed = 0, coachTips = [], restrictions = [] } = opts;
   const calories = targets.showNumbers ? targets.calories : undefined;
 
   const slots: MealSlotPlan[] = SLOTS.map(({ slot, label, timing, share }, slotIndex) => {
-    const ranked = rankRecipes(slot, goal, coachId);
+    const ranked = rankRecipes(slot, goal, coachId, restrictions);
     // Regenerating the plan rotates through the ranked list so each variation
     // leads with a different recipe while keeping the best fits near the top.
-    const offset = (seed + slotIndex * seed) % ranked.length;
+    const offset = ranked.length ? (seed + slotIndex * seed) % ranked.length : 0;
     const rotated = [...ranked.slice(offset), ...ranked.slice(0, offset)];
     const targetKcal = calories ? Math.round((calories * share) / 10) * 10 : undefined;
     return {
@@ -268,7 +277,7 @@ export function buildMealPlan(opts: {
     };
   });
 
-  const picks = slots.map((s) => s.options[0]);
+  const picks = slots.flatMap((s) => (s.options[0] ? [s.options[0]] : []));
   const day = dayTotals(picks);
   const list = groceryList(picks);
 
@@ -283,13 +292,18 @@ export function buildMealPlan(opts: {
   }
   tips.push('Batch-cook the meal-prep recipes on Sunday and Wednesday: cook rice, proteins and chili in bulk, portion into containers.');
   tips.push('Buy frozen fish, shrimp, berries and vegetables — same nutrition, lower price, no waste.');
+  for (const id of restrictions) {
+    const note = getRestriction(id)?.note;
+    if (note) tips.push(note);
+  }
   tips.push(...coachTips.slice(0, 2));
 
   return {
     showNumbers: targets.showNumbers,
+    restrictions,
     slots,
     day,
-    avgCostPerMeal: round2(day.cost / picks.length),
+    avgCostPerMeal: round2(day.cost / Math.max(1, picks.length)),
     costPerWeek: round2(day.cost * 7),
     groceryList: list,
     groceryCheckoutTotal: round2(list.reduce((s, i) => s + i.checkoutCost, 0)),

@@ -6,6 +6,8 @@ import { PROGRAMS } from '@/data/workouts';
 import { adaptationsFor, generatePlan as buildCoachPlan, recommendedDays } from '@/lib/plan';
 import { buildMealPlan, type MealPlan } from '@/lib/meal-plan';
 import { computeTargets } from '@/lib/nutrition';
+import { getDietaryRestrictions } from '@/lib/dietary-store';
+import type { RestrictionId } from '@/data/dietary';
 
 
 // Set EXPO_PUBLIC_API_URL in a .env file once the backend is deployed,
@@ -157,7 +159,8 @@ function profileFromRequest(req: GeneratePlanRequest): UserProfile {
 export function withMealPlan(
   plan: GeneratePlanResponse,
   req: GeneratePlanRequest,
-  seed: number
+  seed: number,
+  restrictions: RestrictionId[] = getDietaryRestrictions()
 ): GeneratePlanResponse {
   const profile = profileFromRequest(req);
   const targets = plan.nutrition.targets ?? computeTargets(profile);
@@ -167,6 +170,7 @@ export function withMealPlan(
     targets,
     seed,
     coachTips: PROGRAMS[req.coachId]?.nutritionTips ?? plan.nutrition.tips,
+    restrictions,
   });
   return { ...plan, nutrition: { ...plan.nutrition, targets, mealPlan } };
 }
