@@ -109,10 +109,10 @@ athleet/
 
 More detail, including deployment, is in [`athleet/README.md`](athleet/README.md).
 
-## Team
+## Team Mascot
 
 **Harlem Globesluggers**
 
 <img src="swag.jpg" alt="The Harlem Globesluggers mascot, a yellow slug in a basketball jersey, spinning a ball on court" width="600">
 
-*We ball.*
+*F*** it, we ball.*
