@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import {
   MAX_WEEKLY_BUDGET,
@@ -8,7 +8,7 @@ import {
   type BudgetMode,
   type BudgetSetting,
 } from '@/lib/budget-store';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
 
 const QUICK_AMOUNTS = [40, 60, 80, 100];
 
@@ -142,7 +142,7 @@ export function BudgetOptions({ budget }: { budget: BudgetSetting }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   list: { gap: 10, marginTop: 16 },
   option: {
     backgroundColor: colors.surface,
@@ -195,4 +195,4 @@ const styles = StyleSheet.create({
   quickOn: { borderColor: colors.accent },
   quickText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
   quickTextOn: { color: colors.accent },
-});
+}));

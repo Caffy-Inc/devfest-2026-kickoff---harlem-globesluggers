@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { BudgetOptions, budgetLabel } from '@/components/budget-options';
 import type { BudgetSetting } from '@/lib/budget-store';
 import type { MealPlan } from '@/lib/meal-plan';
 import { defaultWeek } from '@/lib/meal-week';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 
@@ -57,7 +57,7 @@ export function BudgetPanel({ budget, mealPlan }: { budget: BudgetSetting; mealP
                 <View style={[styles.status, over ? styles.statusOver : styles.statusOk]}>
                   <Text style={[styles.statusText, { color: over ? colors.warning : colors.successText }]}>
                     {over
-                      ? `${money(weekly - limit)} over your ${money(limit)} budget. Even the cheapest meals that hit your calories cost ${money(info?.cheapestPerWeek ?? weekly)}/week.`
+                      ? `⚠ ${money(weekly - limit)} over your ${money(limit)} budget. Even the cheapest meals that hit your calories cost ${money(info?.cheapestPerWeek ?? weekly)}/week.`
                       : `✓ ${money(limit - weekly)} under your ${money(limit)} budget`}
                   </Text>
                 </View>
@@ -78,7 +78,7 @@ export function BudgetPanel({ budget, mealPlan }: { budget: BudgetSetting; mealP
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   card: {
     marginTop: 16,
     backgroundColor: colors.surface,
@@ -117,4 +117,4 @@ const styles = StyleSheet.create({
   statusOver: { backgroundColor: colors.warningBg, borderColor: colors.warningBorder },
   statusText: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
   note: { fontSize: 12, color: colors.textSubtle, lineHeight: 17, marginTop: 10 },
-});
+}));

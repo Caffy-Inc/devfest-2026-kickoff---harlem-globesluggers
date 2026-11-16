@@ -1,15 +1,15 @@
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 import { HomeLogo } from '@/components/home-logo';
-import { ResetOnboarding } from '@/components/reset-onboarding';
 import { OnboardingMascot } from '@/components/onboarding-mascot';
 import { useSelectedPlan } from '@/lib/selected-plan';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
+import { themed } from '@/components/themed-screen';
 
 // Home page — the app's origin route ("/"). The questionnaire lives at /questionnaire.
-export default function HomeScreen() {
+function HomeScreen() {
   const { height, width } = useWindowDimensions();
   // Saved on the device, so returning users can pick up where they left off.
   const selected = useSelectedPlan();
@@ -37,13 +37,12 @@ export default function HomeScreen() {
             <Text style={styles.buttonText}>Start a new plan  →</Text>
           </Pressable>
         </View>
-        <ResetOnboarding />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 48 },
   header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -56,4 +55,7 @@ const styles = StyleSheet.create({
   buttonText: { color: colors.bg, fontWeight: '700', fontSize: 16 },
   myPlanButton: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: 6, paddingHorizontal: 14, paddingVertical: 8 },
   myPlanButtonText: { color: colors.text, fontWeight: '600', fontSize: 14 },
-});
+}));
+
+// Redraws with the new look when the appearance settings change.
+export default themed(HomeScreen);

@@ -1,12 +1,14 @@
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { AccessibilityInfo, Animated, AppState, Platform, StyleSheet, Text, View } from 'react-native';
+import { Animated, AppState, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { sampleSpeech, emptySpeechAnimation, type SpeechAnimation } from '@/lib/speech-animation';
 import { coachPose, easeInOut, type CoachMotion, type CoachPose } from '@/lib/lebron-motion';
 import { ExerciseDemo } from './exercise-demo';
 import { coachArt, type CoachArt } from './coach-art';
 import type { Coach } from '@/lib/types';
+import { useReduceMotion } from '@/lib/appearance';
+import { themedStyles } from '@/lib/theme';
 
 const restingSpeech = sampleSpeech(emptySpeechAnimation(), 0);
 const neutral = coachPose(0, 'idle', true, restingSpeech);
@@ -20,26 +22,14 @@ export function AnimatedCoach({ coach, motion, speechAnimation, compact = false,
   useEffect(() => { playback.current = { exercise, paused }; }, [exercise, paused]);
   const [focused, setFocused] = useState(true);
   const [foreground, setForeground] = useState(AppState.currentState !== 'background');
-  const [reduced, setReduced] = useState(true);
+  // Settings → Reduce motion, falling back to the OS setting.
+  const reduced = useReduceMotion();
   const [values] = useState(() => Object.fromEntries(poseKeys.map(key => [key, new Animated.Value(neutral[key])])) as Record<keyof CoachPose, Animated.Value>);
   const pose = useRef(neutral);
   useFocusEffect(useCallback(() => { setFocused(true); return () => setFocused(false); }, []));
   useEffect(() => {
     const app = AppState.addEventListener('change', state => setForeground(state === 'active'));
     return () => app.remove();
-  }, []);
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const sync = () => setReduced(preference.matches);
-      sync(); preference.addEventListener('change', sync);
-      return () => preference.removeEventListener('change', sync);
-    }
-    let active = true;
-    let changed = false;
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', value => { changed = true; setReduced(value); });
-    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (active && !changed) setReduced(value); }).catch(() => {});
-    return () => { active = false; subscription.remove(); };
   }, []);
   useEffect(() => {
     if (!focused || !foreground || (motion === 'exercise' && exercise)) return;
@@ -115,9 +105,9 @@ export function AnimatedCoach({ coach, motion, speechAnimation, compact = false,
     </View>
   );
 }
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   stage: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   layer: { ...StyleSheet.absoluteFill },
   image: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
   status: { color: '#ffd65a', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginTop: 2 },
-});
+}));

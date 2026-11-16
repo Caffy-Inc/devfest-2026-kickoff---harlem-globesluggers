@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { clearProfile } from '@/lib/profile-store';
 import { clearSelectedPlan } from '@/lib/selected-plan';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
 
 export function ResetOnboarding() {
   function reset() {
@@ -28,9 +28,9 @@ export function ResetOnboarding() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   container: { gap: 6, marginVertical: 16 },
   button: { minHeight: 44, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.borderStrong, borderRadius: 6, paddingHorizontal: 16, paddingVertical: 10 },
   label: { color: colors.text, fontSize: 14, fontWeight: '600' },
   hint: { color: colors.textSubtle, fontSize: 12, textAlign: 'center' },
-});
+}));

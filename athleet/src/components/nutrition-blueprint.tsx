@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import type { MealPlan } from '@/lib/meal-plan';
+import type { GroceryItem, MealPlan } from '@/lib/meal-plan';
 import {
   basePick,
   buildPlanWeeks,
@@ -14,11 +14,10 @@ import {
   type Weekday,
   type WeekEntry,
 } from '@/lib/meal-week';
-import type { GroceryItem } from '@/lib/meal-plan';
 import { shelfOf } from '@/data/shelf-life';
 import { getWeekBounds } from '@/lib/workout-log';
 import type { NutritionTargets } from '@/lib/types';
-import { colors } from '@/lib/theme';
+import { colors, emoji, themedStyles } from '@/lib/theme';
 
 type Props = {
   summary: string;
@@ -87,7 +86,7 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan, trainingD
   if (!mealPlan || !week) {
     return (
       <View style={styles.card}>
-        <Text style={styles.title}>🥗 Nutrition Blueprint</Text>
+        <Text style={styles.title}>{emoji('🥗')}Nutrition Blueprint</Text>
         <Text style={styles.summary}>{summary}</Text>
         {tips.map((tip, i) => (
           <View key={i} style={styles.tipRow}>
@@ -133,7 +132,7 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan, trainingD
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>🥗 Nutrition Blueprint</Text>
+      <Text style={styles.title}>{emoji('🥗')}Nutrition Blueprint</Text>
       <Text style={styles.summary}>{summary}</Text>
 
       {/* Weekly numbers */}
@@ -150,7 +149,7 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan, trainingD
         <BudgetLine limit={plan.budget.weeklyLimit} weekly={week.cost} />
       )}
       {plan.budget?.mode === 'cheapest' && (
-        <Text style={styles.totalsLine}>🪙 Cheapest-possible mode: every meal and swap is sorted by price.</Text>
+        <Text style={styles.totalsLine}>{emoji('🪙')}Cheapest-possible mode: every meal and swap is sorted by price.</Text>
       )}
 
       {/* Plan length + week navigation */}
@@ -472,7 +471,7 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan, trainingD
       {/* Prep plan */}
       {week.prep.length > 0 && (
         <View style={styles.weekBox}>
-          <Text style={styles.weekTitle}>🧑‍🍳 Prep ahead{weeks.length > 1 ? ` · week ${wi + 1}` : ''}</Text>
+          <Text style={styles.weekTitle}>{emoji('🧑‍🍳')}Prep ahead{weeks.length > 1 ? ` · week ${wi + 1}` : ''}</Text>
           <Text style={styles.weekSub}>
             Cook these in advance and most of the week is reheat-and-eat.
             {week.batches.length > 0 ? ` ${week.batches.length} batch${week.batches.length > 1 ? 'es' : ''} cover ${week.batches.reduce((s, b) => s + b.portions, 0)} meals.` : ''}
@@ -505,7 +504,7 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan, trainingD
 
       {/* Groceries: fresh items weekly, pantry + freezer once for the whole plan */}
       <View style={styles.weekBox}>
-        <Text style={styles.weekTitle}>🛒 Grocery lists</Text>
+        <Text style={styles.weekTitle}>{emoji('🛒')}Grocery lists</Text>
         <View style={[styles.viewToggle, { marginTop: 8 }]} accessibilityRole="tablist">
           {(['week', 'stock'] as const).map((t) => (
             <Pressable
@@ -648,7 +647,7 @@ function Chip({ text, accent }: { text: string; accent?: boolean }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   card: {
     backgroundColor: colors.surface,
     borderRadius: 12,
@@ -852,4 +851,4 @@ const styles = StyleSheet.create({
   tipBullet: { fontSize: 14, color: colors.textFaint },
   tipText: { fontSize: 14, color: colors.textSecondary, flex: 1, lineHeight: 20 },
   priceNote: { fontSize: 11, color: colors.textFaint, marginTop: 12, lineHeight: 15 },
-});
+}));

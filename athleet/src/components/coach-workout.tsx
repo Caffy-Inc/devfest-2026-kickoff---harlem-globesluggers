@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 
 import { getCoach } from '@/data/coaches';
@@ -7,7 +7,8 @@ import { StreakBadge } from '@/components/streak-badge';
 import { hypeLine, signatureFor } from '@/data/hype';
 import { useSelectedPlan } from '@/lib/selected-plan';
 import { restSeconds, saveWorkout, type LoggedSet } from '@/lib/workout-log';
-import { colors } from '@/lib/theme';
+import { feedback } from '@/lib/feedback';
+import { colors, emoji, keyboardAppearance, themedStyles } from '@/lib/theme';
 
 type SetEntry = { reps: string; weight: string; done: boolean };
 
@@ -51,6 +52,10 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
   const doneCount = entries.reduce((n, sets) => n + sets.filter((s) => s.done).length, 0);
   const resting = restEnd !== null && now < restEnd;
 
+  // Buzz / chime when a rest runs out on its own (not when it's skipped).
+  const restRanOut = restEnd !== null && !resting;
+  useEffect(() => { if (restRanOut) feedback('rest-over'); }, [restRanOut]);
+
   // The next set to do: first one not done yet.
   let current: { ex: number; set: number } | null = null;
   for (let i = 0; i < entries.length && !current; i++) {
@@ -81,6 +86,7 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
     const wasDone = entries[ex][set].done;
     update(ex, set, { done: !wasDone });
     if (wasDone) return;
+    feedback('set');
     setShoutUntil(Date.now() + 2500);
     const isLastOverall = doneCount + 1 >= total;
     const rest = restSeconds(planDay!.exercises[ex].rest);
@@ -116,6 +122,7 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
     });
     setRestEnd(null);
     setFinished(true);
+    feedback('finish');
   }
 
   const volume = entries.reduce(
@@ -152,7 +159,7 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
       {finished ? (
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.summary}>
-            <Text style={styles.summaryTitle}>{doneCount === total ? 'Workout complete 🎉' : 'Workout saved'}</Text>
+            <Text style={styles.summaryTitle}>{doneCount === total ? `Workout complete${emoji('🎉', 'after')}` : 'Workout saved'}</Text>
             <View style={styles.statsRow}>
               <Stat value={`${doneCount}/${total}`} label="sets" />
               <Stat value={clock((now - startedAt) / 1000)} label="time" />
@@ -178,7 +185,7 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
                 <Text style={styles.muted}>
                   {timed ? e.reps : `${e.sets} × ${e.reps}`}{e.rest && e.rest !== '—' ? ` · rest ${e.rest}` : ''}
                 </Text>
-                {e.notes ? <Text style={styles.note}>💡 {e.notes}</Text> : null}
+                {e.notes ? <Text style={styles.note}>{emoji('💡')}{e.notes}</Text> : null}
 
                 {entries[i].map((s, j) => {
                   if (current?.set !== j) return null;
@@ -195,7 +202,7 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
                             placeholder={e.reps.replace(/\s*reps?/i, '')}
                             placeholderTextColor={colors.textFaint}
                             keyboardType="number-pad"
-                            keyboardAppearance="dark"
+                            keyboardAppearance={keyboardAppearance()}
                             accessibilityLabel={`${e.name} set ${j + 1} reps`}
                             editable={!s.done}
                           />
@@ -206,7 +213,7 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
                             placeholder="lb"
                             placeholderTextColor={colors.textFaint}
                             keyboardType="decimal-pad"
-                            keyboardAppearance="dark"
+                            keyboardAppearance={keyboardAppearance()}
                             accessibilityLabel={`${e.name} set ${j + 1} weight`}
                             editable={!s.done}
                           />
@@ -234,7 +241,7 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
           {doneCount > 0 && <Pressable onPress={undoLastSet} accessibilityRole="button"><Text style={styles.muted}>Undo last set</Text></Pressable>}
           <Pressable disabled={doneCount === 0} style={[styles.primaryBtn, doneCount === 0 && { opacity: .4 }]} onPress={finish} accessibilityRole="button">
             <Text style={styles.primaryText}>
-              {doneCount >= total ? 'Finish workout 🎉' : `Save partial workout (${doneCount}/${total} sets)`}
+              {doneCount >= total ? `Finish workout${emoji('🎉', 'after')}` : `Save partial workout (${doneCount}/${total} sets)`}
             </Text>
           </Pressable>
         </ScrollView>
@@ -252,46 +259,47 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+// `big` is the "Big workout mode" setting: numbers and controls readable from across the room.
+const styles = themedStyles(({ big }) => ({
   screen: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1, minWidth: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   title: { color: colors.accent, fontSize: 22, fontWeight: '800' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 14 },
   close: { color: colors.textSecondary, fontSize: 22 },
-  dayName: { color: colors.accent, fontSize: 17, fontWeight: '800' },
+  dayName: { color: colors.accent, fontSize: big ? 20 : 17, fontWeight: '800' },
   focus: { color: colors.textMuted, fontSize: 13 },
-  timer: { color: colors.accent, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  progressTrack: { height: 4, backgroundColor: colors.border, marginHorizontal: 20, borderRadius: 2 },
-  progressFill: { height: 4, backgroundColor: colors.accent, borderRadius: 2 },
+  timer: { color: colors.accent, fontSize: big ? 34 : 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  progressTrack: { height: big ? 8 : 4, backgroundColor: colors.border, marginHorizontal: 20, borderRadius: 2 },
+  progressFill: { height: big ? 8 : 4, backgroundColor: colors.accent, borderRadius: 2 },
   hypeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 16 },
   hypeBubble: { flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: 14, borderBottomLeftRadius: 4, padding: 12 },
   hypeName: { color: colors.textMuted, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
   hypeText: { color: colors.accent, fontSize: 17, fontWeight: '800', marginTop: 2 },
   restBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, marginTop: 12, backgroundColor: colors.successBg, borderColor: colors.successBorder, borderWidth: 1, borderRadius: 10, padding: 12 },
-  restText: { color: colors.successText, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  restSkip: { color: colors.successText, fontSize: 14, fontWeight: '600' },
+  restText: { color: colors.successText, fontSize: big ? 30 : 16, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  restSkip: { color: colors.successText, fontSize: big ? 18 : 14, fontWeight: '600' },
   content: { padding: 20, paddingBottom: 48, gap: 12, width: '100%', maxWidth: 560, alignSelf: 'center' },
   sectionLabel: { color: colors.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 1, marginTop: 4 },
   muted: { color: colors.textMuted, fontSize: 13 },
   note: { color: colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 14, gap: 6 },
   cardActive: { borderColor: colors.textFaint },
-  exName: { color: colors.accent, fontSize: 16, fontWeight: '700' },
+  exName: { color: colors.accent, fontSize: big ? 24 : 16, fontWeight: '700' },
   setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 8, borderWidth: 1, borderColor: 'transparent' },
   setRowCurrent: { borderColor: colors.accent, backgroundColor: colors.surfaceRaised },
   setRowDone: { opacity: 0.55 },
-  setLabel: { color: colors.textSecondary, fontSize: 14, fontWeight: '600', width: 52 },
-  input: { flex: 1, minWidth: 0, height: 40, borderRadius: 8, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.bg, color: colors.accent, textAlign: 'center', fontSize: 15 },
-  check: { width: 44, height: 40, borderRadius: 8, borderWidth: 1, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center', marginLeft: 'auto' },
+  setLabel: { color: colors.textSecondary, fontSize: big ? 20 : 14, fontWeight: '600', width: big ? 72 : 52 },
+  input: { flex: 1, minWidth: 0, height: big ? 60 : 40, borderRadius: 8, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.bg, color: colors.accent, textAlign: 'center', fontSize: big ? 26 : 15 },
+  check: { width: big ? 68 : 44, height: big ? 60 : 40, borderRadius: 8, borderWidth: 1, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center', marginLeft: 'auto' },
   checkDone: { backgroundColor: colors.successBorder, borderColor: colors.successBorder },
-  checkText: { color: colors.textFaint, fontSize: 18, fontWeight: '800' },
+  checkText: { color: colors.textFaint, fontSize: big ? 28 : 18, fontWeight: '800' },
   checkTextDone: { color: colors.accent },
   primaryBtn: { backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 18, alignItems: 'center', marginTop: 12 },
-  primaryText: { color: colors.bg, fontSize: 16, fontWeight: '800' },
+  primaryText: { color: colors.bg, fontSize: big ? 20 : 16, fontWeight: '800' },
   summary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: 12, padding: 20, gap: 16 },
   summaryTitle: { color: colors.accent, fontSize: 22, fontWeight: '800', textAlign: 'center' },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   stat: { alignItems: 'center', gap: 2 },
-  statValue: { color: colors.accent, fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] },
-});
+  statValue: { color: colors.accent, fontSize: big ? 34 : 22, fontWeight: '800', fontVariant: ['tabular-nums'] },
+}));

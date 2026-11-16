@@ -1,20 +1,20 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { HomeLogo } from '@/components/home-logo';
-import { ResetOnboarding } from '@/components/reset-onboarding';
 import { CoachCard } from '@/components/coach-card';
 import { StreakBadge } from '@/components/streak-badge';
 import { COACHES } from '@/data/coaches';
 import { rankCoaches } from '@/lib/match';
 import { getProfile } from '@/lib/profile-store';
 import { useSelectedPlan } from '@/lib/selected-plan';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
+import { themed } from '@/components/themed-screen';
 
 // The chatbot section: every coach, best matches first.
-export default function CoachesScreen() {
+function CoachesScreen() {
   const profile = getProfile();
   const selectedCoachId = useSelectedPlan()?.coachId;
   const ranked = useMemo(
@@ -46,16 +46,12 @@ export default function CoachesScreen() {
         <View style={styles.header}>
           <HomeLogo style={styles.logo} />
           <View style={styles.headerLinks}>
-            <Pressable onPress={() => router.push('/voice-settings' as any)} accessibilityRole="button" hitSlop={8}>
-              <Text style={styles.link}>Coach voices</Text>
-            </Pressable>
             <Pressable onPress={() => router.replace('/questionnaire' as any)} accessibilityRole="button" hitSlop={8}>
               <Text style={styles.link}>Edit my answers</Text>
             </Pressable>
           </View>
         </View>
 
-        <ResetOnboarding />
         <StreakBadge />
         <View style={styles.spacer} />
 
@@ -80,7 +76,7 @@ export default function CoachesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 32 },
   header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
@@ -92,4 +88,7 @@ const styles = StyleSheet.create({
   subtle: { color: colors.textSubtle, fontSize: 13, marginTop: 4 },
   spaced: { marginTop: 32 },
   summary: { fontSize: 13, color: colors.textSubtle, marginTop: 32 },
-});
+}));
+
+// Redraws with the new look when the appearance settings change.
+export default themed(CoachesScreen);

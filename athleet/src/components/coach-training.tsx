@@ -1,6 +1,6 @@
 import { Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { exerciseRecipe } from '@/lib/exercise-rig';
 import { AnimatedCoach } from '@/components/animated-coach';
@@ -11,7 +11,7 @@ import { sendChat } from '@/lib/api';
 import { getProfile } from '@/lib/profile-store';
 import { useSelectedPlan } from '@/lib/selected-plan';
 import type { ChatMessage, Coach } from '@/lib/types';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
 
 export function CoachTraining({ coach, parameters, newPlan = false, initialDay, voiceEnabled = false }: {
   coach: Coach; parameters: PlanParams; newPlan?: boolean; initialDay?: number; voiceEnabled?: boolean;
@@ -100,7 +100,7 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   demoControls: { paddingHorizontal: 18, alignItems: 'center', gap: 6 },
   demoCaption: { color: colors.textMuted, fontSize: 12, textAlign: 'center' },
   demoButton: { backgroundColor: colors.accent, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, minHeight: 44, justifyContent: 'center' },
@@ -111,4 +111,4 @@ const styles = StyleSheet.create({
   message: { color: colors.text, fontSize: 14, lineHeight: 20 }, row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 18 },
   link: { color: colors.accent, fontWeight: '700', fontSize: 12, paddingVertical: 12 }, input: { flex: 1, minWidth: 130, color: colors.text, backgroundColor: colors.surface, padding: 12, borderRadius: 8, marginBottom: 8 },
   resume: { paddingHorizontal: 20, backgroundColor: colors.accentSoft },
-});
+}));

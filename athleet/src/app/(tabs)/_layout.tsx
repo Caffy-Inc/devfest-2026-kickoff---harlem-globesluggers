@@ -1,19 +1,22 @@
 import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 
-import { PLAN_TABS, TAB_COLORS } from '@/components/plan-tab-bar';
+import { PLAN_TABS } from '@/components/plan-tab-bar';
 import { useSelectedPlan } from '@/lib/selected-plan';
+import { useTheme } from '@/lib/theme';
 
 export default function TabLayout() {
   const selected = useSelectedPlan();
+  // The tab navigator stays mounted across theme changes, so it reads the palette reactively.
+  const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: TAB_COLORS.background },
-        tabBarStyle: { backgroundColor: TAB_COLORS.background, borderTopColor: TAB_COLORS.border },
-        tabBarActiveTintColor: TAB_COLORS.active,
-        tabBarInactiveTintColor: TAB_COLORS.inactive,
+        sceneStyle: { backgroundColor: colors.bg },
+        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.border },
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textFaint,
       }}>
       {PLAN_TABS.map(tab => (
         <Tabs.Screen

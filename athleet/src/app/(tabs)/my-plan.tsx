@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PlanView } from '@/components/plan-view';
 import { useSelectedPlan } from '@/lib/selected-plan';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
+import { themed } from '@/components/themed-screen';
 
-export default function MyPlanScreen() {
+function MyPlanScreen() {
   const selected = useSelectedPlan();
   if (!selected) {
     return (
@@ -32,11 +33,14 @@ export default function MyPlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   screen: { flex: 1, backgroundColor: colors.bg },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
   title: { color: colors.text, fontSize: 22, fontWeight: '800' },
   text: { color: colors.textMuted, fontSize: 15, textAlign: 'center' },
   btn: { backgroundColor: colors.accent, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 24, marginTop: 8 },
   btnText: { color: colors.bg, fontWeight: '700', fontSize: 15 },
-});
+}));
+
+// Redraws with the new look when the appearance settings change.
+export default themed(MyPlanScreen);

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { moveTrainingDay, planDayIndexForDate, trainingWeekdays, weekdayName } from '@/lib/plan';
 import { selectPlan, useSelectedPlan } from '@/lib/selected-plan';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
 import { isSameDay, useStreak, useWorkoutLogs, type WorkoutLog } from '@/lib/workout-log';
 
 // Full-month calendar for the Workout Plan tab: which days you trained, which days are
@@ -284,7 +284,7 @@ function Legend({ swatch, label }: { swatch: StyleProp<ViewStyle>; label: string
 
 const CELL = `${100 / 7}%` as const;
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
     screen: { flex: 1, backgroundColor: colors.bg },
     topBar: {
         flexDirection: 'row',
@@ -369,4 +369,4 @@ const styles = StyleSheet.create({
     chipText: { color: colors.accent, fontSize: 13, fontWeight: '800' },
     chipSub: { color: colors.textSubtle, fontSize: 10, marginTop: 2 },
     footnote: { color: colors.textFaint, fontSize: 11, marginTop: 10, fontStyle: 'italic' },
-});
+}));

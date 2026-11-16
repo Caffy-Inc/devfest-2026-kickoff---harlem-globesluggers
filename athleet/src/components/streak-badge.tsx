@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { useStreak } from '@/lib/workout-log';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
 
 /** "🔥 3-day streak" with a nudge to keep it alive. */
 export function StreakBadge({ compact }: { compact?: boolean }) {
@@ -34,7 +34,7 @@ export function StreakBadge({ compact }: { compact?: boolean }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   flex: { flex: 1, minWidth: 0 },
   card: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 14, marginTop: 12 },
   cardAtRisk: { borderColor: colors.warningBorder, backgroundColor: colors.warningBg },
@@ -44,4 +44,4 @@ const styles = StyleSheet.create({
   pill: { borderWidth: 1, borderColor: colors.borderStrong, borderRadius: 14, paddingVertical: 4, paddingHorizontal: 10, backgroundColor: colors.surface },
   pillOn: { borderColor: colors.warningBorder, backgroundColor: colors.warningBg },
   pillText: { color: colors.text, fontSize: 14, fontWeight: '800' },
-});
+}));

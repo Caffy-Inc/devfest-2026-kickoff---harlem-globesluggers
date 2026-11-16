@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { coachPortraits } from './coach-art';
 import { AVATAR_IMAGES } from '@/data/avatars';
 import type { Coach } from '@/lib/types';
+import { themedStyles } from '@/lib/theme';
 
 export function CoachAvatar({ coach, size = 64 }: { coach: Coach; size?: number }) {
   const image = coachPortraits[coach.id] ?? AVATAR_IMAGES[coach.id];
@@ -19,6 +20,6 @@ export function CoachAvatar({ coach, size = 64 }: { coach: Coach; size?: number 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   circle: { justifyContent: 'center', alignItems: 'center' },
-});
+}));

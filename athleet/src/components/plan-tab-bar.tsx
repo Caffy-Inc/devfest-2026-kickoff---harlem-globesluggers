@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSelectedPlan } from '@/lib/selected-plan';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
 
 // The bottom tabs, defined once so the real tab navigator and the persistent bar below match.
 // Coaches stays a route (reached from "Browse coaches" on Your Plan) but is hidden from the bar.
@@ -14,11 +14,12 @@ export const PLAN_TABS = [
   { name: 'my-meals', href: '/my-meals', title: 'Your Meals', icon: '🥗', needsPlan: true, hidden: false },
 ] as const;
 
+// Getters, so the values always match the current theme.
 export const TAB_COLORS = {
-  background: colors.bg,
-  border: colors.border,
-  active: colors.accent,
-  inactive: colors.textFaint,
+  get background() { return colors.bg; },
+  get border() { return colors.border; },
+  get active() { return colors.accent; },
+  get inactive() { return colors.textFaint; },
 };
 
 /**
@@ -67,7 +68,7 @@ export function PlanTabBar() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   bar: {
     flexDirection: 'row',
     backgroundColor: TAB_COLORS.background,
@@ -78,4 +79,4 @@ const styles = StyleSheet.create({
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, minHeight: 44 },
   icon: { fontSize: 20 },
   label: { fontSize: 10, fontWeight: '500' },
-});
+}));

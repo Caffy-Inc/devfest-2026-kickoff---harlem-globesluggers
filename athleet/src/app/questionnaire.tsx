@@ -1,5 +1,5 @@
 import { type ComponentRef, useEffect, useRef, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
@@ -8,7 +8,7 @@ import { OnboardingMascot } from '@/components/onboarding-mascot';
 import { recommendedDays } from '@/lib/plan';
 import { setProfile } from '@/lib/profile-store';
 import type { Goal, Sex } from '@/lib/types';
-import { colors } from '@/lib/theme';
+import { colors, keyboardAppearance, themedStyles } from '@/lib/theme';
 
 type Step = 'age' | 'gender' | 'height' | 'weight' | 'goal';
 type Units = 'imperial' | 'metric';
@@ -156,7 +156,7 @@ export default function QuestionnaireScreen() {
                 onChangeText={(v) => { setAge(v); setError(''); }}
                 placeholder="Enter your age"
                 placeholderTextColor={colors.textFaint}
-                keyboardAppearance="dark"
+                keyboardAppearance={keyboardAppearance()}
                 keyboardType="number-pad"
                 maxLength={3}
                 returnKeyType="next"
@@ -190,7 +190,7 @@ export default function QuestionnaireScreen() {
                     onChangeText={(v) => { setFeet(v); setError(''); }}
                     placeholder="ft"
                     placeholderTextColor={colors.textFaint}
-                    keyboardAppearance="dark"
+                    keyboardAppearance={keyboardAppearance()}
                     keyboardType="number-pad"
                     maxLength={1}
                     returnKeyType="next"
@@ -203,7 +203,7 @@ export default function QuestionnaireScreen() {
                     onChangeText={(v) => { setInches(v); setError(''); }}
                     placeholder="in"
                     placeholderTextColor={colors.textFaint}
-                    keyboardAppearance="dark"
+                    keyboardAppearance={keyboardAppearance()}
                     keyboardType="number-pad"
                     maxLength={2}
                     ref={inchesRef}
@@ -219,7 +219,7 @@ export default function QuestionnaireScreen() {
                   onChangeText={(v) => { setCm(v); setError(''); }}
                   placeholder="cm"
                   placeholderTextColor={colors.textFaint}
-                  keyboardAppearance="dark"
+                  keyboardAppearance={keyboardAppearance()}
                   keyboardType="number-pad"
                   maxLength={3}
                   returnKeyType="next"
@@ -243,7 +243,7 @@ export default function QuestionnaireScreen() {
                 onChangeText={(v) => { setWeight(v); setError(''); }}
                 placeholder={units === 'imperial' ? 'lbs' : 'kg'}
                 placeholderTextColor={colors.textFaint}
-                keyboardAppearance="dark"
+                keyboardAppearance={keyboardAppearance()}
                 keyboardType="decimal-pad"
                 maxLength={5}
                 returnKeyType="next"
@@ -317,7 +317,7 @@ function ErrorText({ text }: { text: string }) {
   return text ? <Text style={styles.error}>{text}</Text> : null;
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 48 },
   header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -370,4 +370,4 @@ const styles = StyleSheet.create({
   summary: { fontSize: 13, color: colors.textSubtle, marginTop: 32 },
   editAge: { alignSelf: 'flex-start', marginTop: 8, paddingVertical: 8 },
   editAgeText: { color: colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
-});
+}));

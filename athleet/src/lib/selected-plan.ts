@@ -81,6 +81,9 @@ function subscribe(listener: () => void) {
   };
 }
 
+/** Calls `listener` whenever the selected plan changes (outside React, e.g. the theme). */
+export const subscribeSelectedPlan = subscribe;
+
 // The server (web static rendering) can't see the device's saved plan, so hydration must
 // start from "no plan" to match its HTML; React then re-renders with the saved plan.
 function getServerSnapshot(): SelectedPlan | null {

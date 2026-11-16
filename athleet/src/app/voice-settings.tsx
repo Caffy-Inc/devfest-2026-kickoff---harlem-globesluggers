@@ -1,15 +1,7 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CoachAvatar } from '@/components/coach-avatar';
@@ -27,11 +19,12 @@ import {
   type CloneStatus,
 } from '@/lib/voice-clone';
 import { shoutSignature } from '@/lib/voice';
-import { colors } from '@/lib/theme';
+import { colors, emoji, themedStyles } from '@/lib/theme';
+import { themed } from '@/components/themed-screen';
 
 // ─── Voice Settings Screen ──────────────────────────────────────────────────
 
-export default function VoiceSettingsScreen() {
+function VoiceSettingsScreen() {
   const [cloned, setCloned] = useState<Record<string, ClonedVoice>>(getAllClonedVoices);
   const [problems, setProblems] = useState(getVoiceProblems);
   const [refreshing, setRefreshing] = useState(false);
@@ -74,7 +67,7 @@ export default function VoiceSettingsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         {/* Explanation */}
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>🎤 Coach Voices (shared)</Text>
+          <Text style={styles.infoTitle}>{emoji('🎤')}Coach Voices (shared)</Text>
           <Text style={styles.infoText}>
             Voices set here are used by everyone who opens the app. Add one by dropping audio
             plus a CONSENT.txt into <Text style={styles.mono}>athleet/voices/&lt;coach&gt;/</Text>{' '}
@@ -274,7 +267,7 @@ function CoachVoiceRow({
                 <Text style={styles.cloneBtnText}>Building voice…</Text>
               </View>
             ) : (
-              <Text style={styles.cloneBtnText}>🎤 Create voice</Text>
+              <Text style={styles.cloneBtnText}>{emoji('🎤')}Create voice</Text>
             )}
           </Pressable>
         </>
@@ -293,7 +286,7 @@ function CoachVoiceRow({
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   screen: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: 'row',
@@ -437,4 +430,7 @@ const styles = StyleSheet.create({
   // Status
   errorText: { color: colors.danger, fontSize: 13 },
   successText: { color: colors.success, fontSize: 13 },
-});
+}));
+
+// Redraws with the new look when the appearance settings change.
+export default themed(VoiceSettingsScreen);

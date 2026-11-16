@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { RESTRICTIONS, type Restriction, type RestrictionId } from '@/data/dietary';
 import { setDietaryRestrictions, toggleDietaryRestriction } from '@/lib/dietary-store';
-import { colors } from '@/lib/theme';
+import { colors, emoji, themedStyles } from '@/lib/theme';
 
 type Props = { selected: RestrictionId[] };
 
@@ -30,7 +30,7 @@ export function DietaryRestrictions({ selected }: Props) {
         accessibilityState={{ expanded: open }}
         accessibilityLabel="Dietary restrictions">
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>🥦 Dietary restrictions</Text>
+          <Text style={styles.title}>{emoji('🥦')}Dietary restrictions</Text>
           <Text style={styles.summary} numberOfLines={open ? undefined : 2}>
             {summary}
           </Text>
@@ -78,7 +78,7 @@ export function DietaryRestrictions({ selected }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   card: {
     backgroundColor: colors.surface,
     borderRadius: 12,
@@ -109,4 +109,4 @@ const styles = StyleSheet.create({
   disclaimer: { fontSize: 11, color: colors.textFaint, lineHeight: 15 },
   clear: { alignSelf: 'flex-start', paddingVertical: 8, marginTop: 4 },
   clearText: { fontSize: 13, color: colors.text, fontWeight: '600' },
-});
+}));

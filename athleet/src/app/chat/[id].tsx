@@ -1,6 +1,6 @@
 import { Stack, useFocusEffect, useLocalSearchParams, router } from 'expo-router';
 import { useCallback, useRef, useState, type ComponentRef } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CoachTraining } from '@/components/coach-training';
 import type { PlanParams } from '@/components/plan-view';
@@ -13,7 +13,7 @@ import { sendChat } from '@/lib/api';
 import { getProfile } from '@/lib/profile-store';
 import type { CoachMotion } from '@/lib/lebron-motion';
 import type { ChatMessage, Equipment, Goal } from '@/lib/types';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
 
 const GOALS: { value: Goal; label: string; icon: string }[] = [
   { value: 'sport_performance', label: 'Move like an athlete', icon: '⚡' },
@@ -134,7 +134,7 @@ function CoachSession({ id, parameters }: { id: string; parameters: PlanParams &
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   screen: { flex: 1, backgroundColor: colors.bg }, flex: { flex: 1 },
   shell: { flex: 1, width: '100%', maxWidth: 680, alignSelf: 'center' },
   progressRow: { paddingHorizontal: 24, paddingTop: 18, flexDirection: 'row', justifyContent: 'space-between' },
@@ -156,4 +156,4 @@ const styles = StyleSheet.create({
   disclosure: { color: colors.textSubtle, fontSize: 10, textAlign: 'center', marginTop: 8 }, error: { color: colors.danger, fontSize: 12, marginBottom: 12 },
   footer: { flexDirection: 'row', padding: 18, gap: 12, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.bg },
   back: { justifyContent: 'center', padding: 12 }, backText: { color: colors.textSecondary, fontWeight: '700' }, cta: { flex: 1, backgroundColor: colors.accent, borderRadius: 14, borderBottomWidth: 4, borderBottomColor: colors.accentDark, minHeight: 55, alignItems: 'center', justifyContent: 'center' }, ctaText: { color: colors.onAccent, fontSize: 14, fontWeight: '900' }, disabled: { opacity: .35 },
-});
+}));

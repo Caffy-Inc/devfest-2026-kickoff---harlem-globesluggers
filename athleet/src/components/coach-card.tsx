@@ -1,8 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { CoachAvatar } from '@/components/coach-avatar';
 import type { Match } from '@/lib/match';
-import { colors } from '@/lib/theme';
+import { colors, themedStyles } from '@/lib/theme';
 
 export function CoachCard({
   match, highlight, onPress,
@@ -29,7 +29,7 @@ export function CoachCard({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   section: { marginTop: 12 },
   pressed: { opacity: 0.7 },
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 6, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 16 },
@@ -41,4 +41,4 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: '700', color: colors.text },
   tagline: { fontSize: 14, color: colors.textMuted },
   tags: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
-});
+}));

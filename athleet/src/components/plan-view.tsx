@@ -33,7 +33,7 @@ import {
   lastLogForDay,
   useWorkoutLogs,
 } from '@/lib/workout-log';
-import { colors } from '@/lib/theme';
+import { colors, emoji, themedStyles } from '@/lib/theme';
 
 export type PlanParams = {
   coachId?: string;
@@ -302,7 +302,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
             {/* Feedback notification toast */}
             {toastMessage && (
               <View style={styles.toastBanner}>
-                <Text style={styles.toastText}>⚡ {toastMessage}</Text>
+                <Text style={styles.toastText}>{emoji('⚡')}{toastMessage}</Text>
               </View>
             )}
 
@@ -455,7 +455,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                 {/* Warm-up */}
                 {plan.days[expandedDay].warmUp && (
                   <View style={styles.phaseBlock}>
-                    <Text style={styles.phaseLabel}>🔥 WARM-UP & MOBILITY</Text>
+                    <Text style={styles.phaseLabel}>{emoji('🔥')}WARM-UP & MOBILITY</Text>
                     <Text style={styles.phaseText}>{plan.days[expandedDay].warmUp}</Text>
                   </View>
                 )}
@@ -488,7 +488,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                     </View>
 
                     {exercise.notes && (
-                      <Text style={styles.exerciseNotes}>💡 {exercise.notes}</Text>
+                      <Text style={styles.exerciseNotes}>{emoji('💡')}{exercise.notes}</Text>
                     )}
                     {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
                       <View style={styles.muscleTags}>
@@ -505,7 +505,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                 {/* Cool-down */}
                 {plan.days[expandedDay].coolDown && (
                   <View style={styles.phaseBlock}>
-                    <Text style={styles.phaseLabel}>🧊 COOL-DOWN & RECOVERY</Text>
+                    <Text style={styles.phaseLabel}>{emoji('🧊')}COOL-DOWN & RECOVERY</Text>
                     <Text style={styles.phaseText}>{plan.days[expandedDay].coolDown}</Text>
                   </View>
                 )}
@@ -551,7 +551,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
             <View style={styles.venueCard}>
               <View style={styles.venueHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.venueTitle}>📍 Where to Train (Santa Cruz)</Text>
+                  <Text style={styles.venueTitle}>{emoji('📍')}Where to Train (Santa Cruz)</Text>
                   <Text style={styles.venueSub}>Equipment-matched facilities near you</Text>
                 </View>
                 <Pressable
@@ -559,7 +559,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                   onPress={() => setShowMapModal(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Open interactive Santa Cruz training map">
-                  <Text style={styles.exploreMapBtnText}>🗺️ Interactive Map</Text>
+                  <Text style={styles.exploreMapBtnText}>{emoji('🗺️')}Interactive Map</Text>
                 </Pressable>
               </View>
               {getRecommendedVenues(coachId, equipment).map((venue) => (
@@ -567,7 +567,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                   <View style={{ flex: 1 }}>
                     <Text style={styles.venueName}>{venue.name} <Text style={styles.venueDistance}>• {venue.distance}</Text></Text>
                     <Text style={styles.venueAddress}>{venue.address}</Text>
-                    <Text style={styles.venueWhy}>💡 {venue.recommendedFor}</Text>
+                    <Text style={styles.venueWhy}>{emoji('💡')}{venue.recommendedFor}</Text>
                     <View style={styles.venueTagsRow}>
                       {venue.equipmentTags.map((tag) => (
                         <View key={tag} style={styles.venueTag}>
@@ -582,7 +582,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                       onPress={() => openInAppMap(venue)}
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${venue.name} in-app map`}>
-                      <Text style={styles.inAppMapText}>🗺️ In-App</Text>
+                      <Text style={styles.inAppMapText}>{emoji('🗺️')}In-App</Text>
                     </Pressable>
                     <Pressable
                       style={styles.nativeMapBtn}
@@ -599,7 +599,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
             {/* Recovery & Longevity */}
             {plan.recovery && (
               <View style={styles.infoCard}>
-                <Text style={styles.infoTitle}>💤 Longevity & Recovery</Text>
+                <Text style={styles.infoTitle}>{emoji('💤')}Longevity & Recovery</Text>
                 <Text style={styles.infoSummary}>{plan.recovery.summary}</Text>
                 {plan.recovery.tips.map((tip, i) => (
                   <View key={i} style={styles.tipRow}>
@@ -628,7 +628,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                   style={styles.chatBtn}
                   onPress={() => router.navigate('/coaches')}
                   accessibilityRole="button">
-                  <Text style={styles.chatBtnText}>🔁  Switch coach</Text>
+                  <Text style={styles.chatBtnText}>{emoji('🔁')}Switch coach</Text>
                 </Pressable>
               )}
 
@@ -644,7 +644,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                     <Text style={styles.regenerateText}>  Generating Variation...</Text>
                   </View>
                 ) : (
-                  <Text style={styles.regenerateText}>🔄  Regenerate Plan (New Variation)</Text>
+                  <Text style={styles.regenerateText}>{emoji('🔄')}Regenerate Plan (New Variation)</Text>
                 )}
               </Pressable>
 
@@ -653,7 +653,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                 onPress={() => router.push({ pathname: '/chat/[id]' as any, params: { id: coachId } })}
                 accessibilityRole="button"
               >
-                <Text style={styles.chatBtnText}>💬  Chat with {coach?.name.split(' ')[0]}</Text>
+                <Text style={styles.chatBtnText}>{emoji('💬')}Chat with {coach?.name.split(' ')[0]}</Text>
               </Pressable>}
             </View>
 
@@ -716,9 +716,9 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
               <View style={styles.gridLineV} />
             </View>
             <View style={styles.mapCoastlineWater}>
-              <Text style={styles.oceanLabel}>🌊 Monterey Bay / Pacific Ocean</Text>
+              <Text style={styles.oceanLabel}>{emoji('🌊')}Monterey Bay / Pacific Ocean</Text>
             </View>
-            <Text style={styles.mapCompass}>🧭 N · Santa Cruz, CA</Text>
+            <Text style={styles.mapCompass}>{emoji('🧭')}N · Santa Cruz, CA</Text>
 
             {/* Pins on the visual map */}
             {SANTA_CRUZ_VENUES.map((v) => {
@@ -753,7 +753,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
               <View style={styles.selectedVenueTop}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.selectedVenueName}>{selectedVenue.name}</Text>
-                  <Text style={styles.selectedVenueDist}>📍 {selectedVenue.distance} • {selectedVenue.category.toUpperCase()}</Text>
+                  <Text style={styles.selectedVenueDist}>{emoji('📍')}{selectedVenue.distance} • {selectedVenue.category.toUpperCase()}</Text>
                 </View>
                 <View style={styles.coachMatchBadge}>
                   <Text style={styles.coachMatchText}>Fits: {selectedVenue.bestForCoaches.map(c => c.toUpperCase()).join(', ')}</Text>
@@ -761,7 +761,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
               </View>
 
               <Text style={styles.selectedVenueAddr}>{selectedVenue.address}</Text>
-              <Text style={styles.selectedVenueWhy}>💡 {selectedVenue.recommendedFor}</Text>
+              <Text style={styles.selectedVenueWhy}>{emoji('💡')}{selectedVenue.recommendedFor}</Text>
 
               <View style={styles.selectedVenueTags}>
                 {selectedVenue.equipmentTags.map((tag) => (
@@ -778,14 +778,14 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
                   onPress={() => openInAppMap(selectedVenue)}
                   accessibilityRole="button"
                   accessibilityLabel="Open live map in app">
-                  <Text style={styles.openInAppActionText}>🚀 Open Live Map In-App</Text>
+                  <Text style={styles.openInAppActionText}>{emoji('🚀')}Open Live Map In-App</Text>
                 </Pressable>
                 <Pressable
                   style={styles.openNativeActionBtn}
                   onPress={() => openNativeMap(selectedVenue)}
                   accessibilityRole="button"
                   accessibilityLabel="Open in Apple or native maps">
-                  <Text style={styles.openNativeActionText}>🧭 Apple / Native Maps</Text>
+                  <Text style={styles.openNativeActionText}>{emoji('🧭')}Apple / Native Maps</Text>
                 </Pressable>
               </View>
             </View>
@@ -796,7 +796,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   startWrap: { marginTop: 16, gap: 8 },
   startBtn: { backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 16, alignItems: 'center' },
   startText: { color: colors.bg, fontSize: 16, fontWeight: '800' },
@@ -1308,4 +1308,4 @@ const styles = StyleSheet.create({
   },
   openNativeActionText: { color: colors.text, fontSize: 13, fontWeight: '700' },
   chatBtnText: { color: colors.accent, fontWeight: '600', fontSize: 15 },
-});
+}));

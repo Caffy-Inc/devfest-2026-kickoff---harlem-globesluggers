@@ -1,10 +1,12 @@
 import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, AppState, Platform, StyleSheet, Text, View } from 'react-native';
+import { AppState, StyleSheet, Text, View } from 'react-native';
 import { exerciseRig, type Point } from '@/lib/exercise-rig';
 import type { Coach } from '@/lib/types';
 import { coachArt } from './coach-art';
+import { useReduceMotion } from '@/lib/appearance';
+import { themedStyles } from '@/lib/theme';
 
 const looks: Record<string, [string, string]> = {
   lebron: ['#985b3c', '#ffcf32'], ronnie: ['#945436', '#bc4941'], bolt: ['#875336', '#ffcf32'],
@@ -18,24 +20,13 @@ export function ExerciseDemo({ coach, exercise, paused, height = 210 }: { coach:
   const elapsed = useRef(0);
   const [focused, setFocused] = useState(true);
   const [active, setActive] = useState(AppState.currentState !== 'background');
-  const [reduced, setReduced] = useState(true);
+  // Settings → Reduce motion, falling back to the OS setting.
+  const reduced = useReduceMotion();
   const [width, setWidth] = useState(360);
   useFocusEffect(useCallback(() => { setFocused(true); return () => setFocused(false); }, []));
   useEffect(() => {
     const subscription = AppState.addEventListener('change', value => setActive(value === 'active'));
     return () => subscription.remove();
-  }, []);
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const sync = () => setReduced(media.matches);
-      sync(); media.addEventListener('change', sync);
-      return () => media.removeEventListener('change', sync);
-    }
-    let mounted = true;
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduced);
-    void AccessibilityInfo.isReduceMotionEnabled().then(value => { if (mounted) setReduced(value); }).catch(() => {});
-    return () => { mounted = false; subscription.remove(); };
   }, []);
   useEffect(() => {
     if (paused || reduced || !focused || !active) return;
@@ -80,7 +71,7 @@ export function ExerciseDemo({ coach, exercise, paused, height = 210 }: { coach:
     <Text numberOfLines={2} style={styles.cue}>{pose.cue}</Text>
   </View>;
 }
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   stage: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden', width: '100%' },
   floor: { position: 'absolute', left: 20, right: 20, top: 190, height: 1, backgroundColor: '#60583d' },
   mat: { position: 'absolute', left: 28, right: 28, top: 183, height: 6, borderRadius: 3, backgroundColor: '#494736' },
@@ -88,4 +79,4 @@ const styles = StyleSheet.create({
   bar: { position: 'absolute', left: 130, top: 12, width: 100, height: 5, backgroundColor: '#9cabb7' },
   step: { position: 'absolute', left: 205, top: 163, width: 40, height: 26, backgroundColor: '#5c646a' },
   cue: { color: '#c9bea3', fontSize: 12, lineHeight: 16, textAlign: 'center', paddingHorizontal: 18, marginTop: 4 },
-});
+}));

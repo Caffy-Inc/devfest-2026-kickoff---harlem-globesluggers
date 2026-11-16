@@ -1,9 +1,11 @@
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
-import { AccessibilityInfo, Animated, AppState, Easing, Platform, StyleSheet, View } from 'react-native';
+import { Animated, AppState, Easing, Platform, StyleSheet, View } from 'react-native';
 
 import { frames, smoothTrack } from '@/lib/mascot-motion';
 import { mascotArt, spinBallCenter, spinBallSeam, type MascotPose } from './mascot-art';
+import { useAppearance, useReduceMotion } from '@/lib/appearance';
+import { themedStyles } from '@/lib/theme';
 
 type Reaction = 'welcome' | 'encourage' | 'retry' | 'celebrate';
 const still = Array(9).fill(0) as number[];
@@ -85,35 +87,15 @@ const motionTracks = Object.fromEntries(Object.entries(gestures).map(([pose, ges
 }]));
 
 export function OnboardingMascot({
-  size, reaction, cue,
+  size: requestedSize, reaction, cue,
 }: { size: number; reaction: Reaction; cue: MascotPose }) {
   const [progress] = useState(() => new Animated.Value(0));
-  const [reduceMotion, setReduceMotion] = useState(true);
+  // Settings → Reduce motion (or the OS setting) stops the loop; Settings → Mascot can
+  // shrink it to a still "minimal" version or hide it.
+  const { mascot } = useAppearance();
+  const reduceMotion = useReduceMotion() || mascot !== 'full';
+  const size = mascot === 'minimal' ? Math.round(requestedSize * 0.6) : requestedSize;
   const [foreground, setForeground] = useState(AppState.currentState !== 'background');
-
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
-      const syncPreference = () => setReduceMotion(preference.matches);
-      preference.addEventListener('change', syncPreference);
-      syncPreference();
-      return () => preference.removeEventListener('change', syncPreference);
-    }
-
-    let active = true;
-    let preferenceChanged = false;
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
-      preferenceChanged = true;
-      setReduceMotion(enabled);
-    });
-    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (active && !preferenceChanged) setReduceMotion(enabled);
-    }).catch(() => {});
-    return () => {
-      active = false;
-      subscription.remove();
-    };
-  }, []);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => setForeground(state === 'active'));
@@ -134,6 +116,8 @@ export function OnboardingMascot({
     animation.start();
     return () => animation.stop();
   }, [cue, progress, reaction, reduceMotion, foreground]);
+
+  if (mascot === 'hidden') return null;
 
   const art = mascotArt[cue];
   const motion = motionTracks[reaction === 'retry' ? 'retry' : cue];
@@ -188,7 +172,7 @@ export function OnboardingMascot({
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   stage: { alignSelf: 'center', marginBottom: 14 },
   image: { ...StyleSheet.absoluteFill, width: '100%', height: '100%' },
-});
+}));

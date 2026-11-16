@@ -1,10 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { CoachAvatar } from '@/components/coach-avatar';
@@ -19,7 +14,7 @@ import {
   seedDemoWorkout,
   useWorkoutLogs,
 } from '@/lib/workout-log';
-import { colors } from '@/lib/theme';
+import { colors, emoji, themedStyles } from '@/lib/theme';
 
 interface WeeklyRecapProps {
   coachId: string;
@@ -195,7 +190,7 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
       <View style={styles.calendarSection}>
         <View style={styles.calendarHeaderRow}>
           <View>
-            <Text style={styles.sectionTitle}>📅 Clickable Calendar</Text>
+            <Text style={styles.sectionTitle}>{emoji('📅')}Clickable Calendar</Text>
             <Text style={styles.calendarHint}>Tap a day to inspect details</Text>
           </View>
           <Pressable
@@ -203,7 +198,7 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
             onPress={() => setShowCalendar(true)}
             accessibilityRole="button"
             accessibilityLabel="Open full calendar">
-            <Text style={styles.fullCalendarBtnText}>🗓 Full Calendar</Text>
+            <Text style={styles.fullCalendarBtnText}>{emoji('🗓')}Full Calendar</Text>
           </Pressable>
         </View>
 
@@ -378,7 +373,7 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
       {/* Completed Sessions Feed This Week */}
       <View style={styles.historySection}>
         <View style={styles.historyHeader}>
-          <Text style={styles.sectionTitle}>📋 Sessions This Week ({weekLogs.length})</Text>
+          <Text style={styles.sectionTitle}>{emoji('📋')}Sessions This Week ({weekLogs.length})</Text>
           {weekLogs.length === 0 && (
             <Pressable
               style={styles.demoBtn}
@@ -435,7 +430,7 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
   );
 }
 
-const styles = StyleSheet.create({
+const styles = themedStyles(() => ({
   container: { marginTop: 12, gap: 14 },
 
   // Week Selector
@@ -636,4 +631,4 @@ const styles = StyleSheet.create({
   historyCardBadge: { backgroundColor: colors.successBg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   historyCardBadgeText: { color: colors.success, fontSize: 11, fontWeight: '800' },
   historyCardSets: { color: colors.textMuted, fontSize: 12 },
-});
+}));
