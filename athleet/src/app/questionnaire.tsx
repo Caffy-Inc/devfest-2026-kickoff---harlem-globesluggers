@@ -5,11 +5,11 @@ import { router } from 'expo-router';
 
 import { HomeLogo } from '@/components/home-logo';
 import { OnboardingMascot } from '@/components/onboarding-mascot';
-import { MAX_MINUTES, recommendedDays } from '@/lib/plan';
+import { recommendedDays } from '@/lib/plan';
 import { setProfile } from '@/lib/profile-store';
-import type { Goal, Level, Sex } from '@/lib/types';
+import type { Goal, Sex } from '@/lib/types';
 
-type Step = 'age' | 'gender' | 'height' | 'weight' | 'goal' | 'sport' | 'level' | 'days' | 'time';
+type Step = 'age' | 'gender' | 'height' | 'weight' | 'goal';
 type Units = 'imperial' | 'metric';
 type Option<T> = { value: T; label: string; hint?: string };
 
@@ -26,34 +26,11 @@ const GOALS: Option<Goal>[] = [
   { value: 'sport_performance', label: 'Sport-specific', hint: 'Get better at your sport' },
 ];
 
-const SPORTS: Option<string>[] = [
-  { value: 'basketball', label: 'Basketball' },
-  { value: 'soccer', label: 'Soccer' },
-  { value: 'track', label: 'Track & sprinting' },
-  { value: 'tennis', label: 'Tennis' },
-  { value: 'martial_arts', label: 'Martial arts' },
-];
+const ORDER: Step[] = ['age', 'gender', 'height', 'weight', 'goal'];
 
-const LEVELS: Option<Level>[] = [
-  { value: 'beginner', label: 'Beginner', hint: 'New or under 6 months' },
-  { value: 'intermediate', label: 'Intermediate', hint: '6 months to 2 years' },
-  { value: 'advanced', label: 'Advanced', hint: '2+ years of serious training' },
-];
-
-const ORDER: Step[] = ['age', 'gender', 'height', 'weight', 'goal', 'sport', 'level', 'days', 'time'];
-
-const DAY_HINTS: Record<string, string> = {
-  '1': 'Bare minimum',
-  '2': 'Light schedule',
-  '3': 'Full recovery between sessions',
-  '4': 'Balanced training and rest',
-  '5': 'Serious training',
-  '6': 'All in, one rest day',
-  '7': 'Every day',
-};
-
-const QUICK_MINUTES = [30, 45, 60, 90];
-
+// Defaults for things we no longer ask up front. Days and session length can be changed on the plan screen.
+const DEFAULT_LEVEL = 'beginner' as const;
+const DEFAULT_MINUTES = 60;
 
 export default function QuestionnaireScreen() {
   const { height, width } = useWindowDimensions();
@@ -63,7 +40,7 @@ export default function QuestionnaireScreen() {
   const [error, setError] = useState('');
   const [units, setUnits] = useState<Units>('imperial');
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const isNumericStep = step === 'age' || step === 'height' || step === 'weight' || step === 'time';
+  const isNumericStep = step === 'age' || step === 'height' || step === 'weight';
   const isEditingNumber = isNumericStep && keyboardVisible;
 
   useEffect(() => {
@@ -79,7 +56,6 @@ export default function QuestionnaireScreen() {
     };
   }, []);
 
-
   const [age, setAge] = useState('');
   const [sex, setSex] = useState<Sex | null>(null);
   const [feet, setFeet] = useState('');
@@ -87,22 +63,18 @@ export default function QuestionnaireScreen() {
   const [cm, setCm] = useState('');
   const [weight, setWeight] = useState('');
   const [goal, setGoal] = useState<Goal | null>(null);
-  const [sport, setSport] = useState('general');
-  const [level, setLevel] = useState<Level | null>(null);
-  const [days, setDays] = useState<number | null>(null);
-  const [minutes, setMinutes] = useState('');
 
   const heightCm =
     units === 'imperial' ? (Number(feet) * 12 + Number(inches || 0)) * 2.54 : Number(cm);
   const weightKg = units === 'imperial' ? Number(weight) * 0.4536 : Number(weight);
 
-  function finish(sessionMinutes: number) {
-    if (!sex || !goal || !level) return;
+  function finish(chosenGoal: Goal) {
+    if (!sex) return;
     setProfile({
       age: Number(age), sex, heightCm: Math.round(heightCm), weightKg: Math.round(weightKg),
-      goal, sport, level,
-      daysPerWeek: days ?? recommendedDays(level, Number(age)),
-      sessionMinutes,
+      goal: chosenGoal, sport: 'general', level: DEFAULT_LEVEL,
+      daysPerWeek: recommendedDays(DEFAULT_LEVEL, Number(age)),
+      sessionMinutes: DEFAULT_MINUTES,
       equipment: 'full_gym', injuries: 'none',
     });
     Keyboard.dismiss();
@@ -116,9 +88,7 @@ export default function QuestionnaireScreen() {
   }
 
   function back() {
-    let i = ORDER.indexOf(step) - 1;
-    if (ORDER[i] === 'sport' && goal !== 'sport_performance') i -= 1;
-    const prev = ORDER[i];
+    const prev = ORDER[ORDER.indexOf(step) - 1];
     if (!prev) {
       // Back from the first question returns to the welcome page.
       Keyboard.dismiss();
@@ -145,24 +115,12 @@ export default function QuestionnaireScreen() {
     go('goal');
   }
 
-  function submitTime() {
-    const n = Number(minutes);
-    if (!/^\d+$/.test(minutes) || n < 1 || n > MAX_MINUTES) {
-      return setError(`Please enter minutes between 1 and ${MAX_MINUTES}.`);
-    }
-    finish(n);
-  }
-
   // Lets the keyboard's Next key on the feet box jump to inches.
   const inchesRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   function pickGoal(g: Goal) {
     setGoal(g);
-    if (g === 'sport_performance') go('sport');
-    else {
-      setSport('general');
-      go('level');
-    }
+    finish(g);
   }
 
   const progress = (ORDER.indexOf(step) + 1) / ORDER.length;
@@ -303,74 +261,6 @@ export default function QuestionnaireScreen() {
             </View>
           )}
 
-          {step === 'sport' && (
-            <View style={styles.intro}>
-              <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
-              <Text style={styles.question}>Which sport?</Text>
-              <Choices options={SPORTS} selected={sport} onPick={(v) => { setSport(v); go('level'); }} />
-            </View>
-          )}
-
-          {step === 'level' && (
-            <View style={styles.intro}>
-              <OnboardingMascot size={mascotSize} reaction={error ? 'retry' : 'encourage'} cue={step} />
-              <Text style={styles.question}>How experienced are you?</Text>
-              <Choices options={LEVELS} selected={level} onPick={(v) => { setLevel(v); go('days'); }} />
-            </View>
-          )}
-
-          {step === 'days' && level && (
-            <View style={styles.intro}>
-              <OnboardingMascot size={mascotSize} reaction="encourage" cue="level" />
-              <Text style={styles.question}>How many days a week do you want to train?</Text>
-              <Text style={styles.subtle}>
-                Most people at your level do {recommendedDays(level, Number(age))}. Pick what fits your life.
-              </Text>
-              <Choices
-                options={['1', '2', '3', '4', '5', '6', '7'].map((d) => ({
-                  value: d,
-                  label: `${d} ${d === '1' ? 'day' : 'days'}`,
-                  hint: DAY_HINTS[d],
-                }))}
-                selected={days ? String(days) : null}
-                onPick={(v) => { setDays(Number(v)); go('time'); }}
-              />
-            </View>
-          )}
-
-          {step === 'time' && (
-            <View style={[styles.intro, isEditingNumber && styles.editingIntro]}>
-              <OnboardingMascot size={isEditingNumber ? 64 : mascotSize} reaction={error ? 'retry' : 'celebrate'} cue="results" />
-              <Text style={styles.question}>How long do you want each session to be?</Text>
-              <Text style={styles.subtle}>In minutes.</Text>
-              <TextInput
-                accessibilityLabel="Minutes per session"
-                style={styles.input}
-                value={minutes}
-                onChangeText={(v) => { setMinutes(v.replace(/[^0-9]/g, '')); setError(''); }}
-                placeholder="minutes"
-                placeholderTextColor="#6b6b72"
-                keyboardAppearance="dark"
-                keyboardType="number-pad"
-                maxLength={3}
-                returnKeyType="done"
-                onSubmitEditing={submitTime}
-              />
-              <View style={styles.quickRow}>
-                {QUICK_MINUTES.map((m) => (
-                  <Pressable
-                    key={m}
-                    onPress={() => { setMinutes(String(m)); setError(''); }}
-                    style={[styles.quickChip, minutes === String(m) && styles.quickChipOn]}
-                    accessibilityRole="button">
-                    <Text style={[styles.quickChipText, minutes === String(m) && styles.quickChipTextOn]}>{m} min</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <ErrorText text={error} />
-              <PrimaryButton label="Meet my coaches  →" onPress={submitTime} />
-            </View>
-          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -427,11 +317,6 @@ function ErrorText({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
-  quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 12 },
-  quickChip: { borderWidth: 1, borderColor: '#3a3a40', borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14, backgroundColor: '#1a1a1d' },
-  quickChipOn: { backgroundColor: '#f5f5f5', borderColor: '#f5f5f5' },
-  quickChipText: { color: '#d0d0d5', fontSize: 14, fontWeight: '600' },
-  quickChipTextOn: { color: '#0d0d0f' },
   screen: { flex: 1, backgroundColor: '#0d0d0f' },
   content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 48 },
   header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: '#2a2a2e', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
