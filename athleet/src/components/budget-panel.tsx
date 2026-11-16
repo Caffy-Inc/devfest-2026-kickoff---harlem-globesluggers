@@ -1,32 +1,20 @@
-import { router } from 'expo-router';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { BudgetOptions } from '@/components/budget-options';
-import { HomeLogo } from '@/components/home-logo';
+import { BudgetOptions, budgetLabel } from '@/components/budget-options';
+import type { BudgetSetting } from '@/lib/budget-store';
+import type { MealPlan } from '@/lib/meal-plan';
 import { defaultWeek } from '@/lib/meal-week';
 import { colors } from '@/lib/theme';
-import { useCurrentMealPlan } from '@/lib/use-meal-plan';
 
 const money = (n: number) => `$${n.toFixed(2)}`;
 
-/** "Budget" tab: choose a weekly food budget, the cheapest plan, or no budget. */
-export default function BudgetScreen() {
-  const { selected, mealPlan, budget } = useCurrentMealPlan();
-
-  if (!selected) {
-    return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>No meal plan yet</Text>
-          <Text style={styles.emptyText}>Pick a plan first, then set a food budget for its meals.</Text>
-          <Pressable style={styles.btn} onPress={() => router.navigate('/coaches')} accessibilityRole="button">
-            <Text style={styles.btnText}>Browse coaches</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    );
-  }
+/**
+ * Food budget, shown inside "Your Meals": a summary pill that expands into the
+ * budget picker and what the meal plan costs against it.
+ */
+export function BudgetPanel({ budget, mealPlan }: { budget: BudgetSetting; mealPlan: MealPlan | null | undefined }) {
+  const [open, setOpen] = useState(false);
 
   const week = mealPlan ? defaultWeek(mealPlan) : null;
   const weekly = week?.cost ?? 0;
@@ -35,14 +23,19 @@ export default function BudgetScreen() {
   const over = !!limit && weekly > limit + 0.005;
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Budget</Text>
-            <HomeLogo style={styles.headerLogo} />
-          </View>
+    <View style={[styles.card, open && styles.cardOpen]}>
+      <Pressable
+        style={styles.pill}
+        onPress={() => setOpen(o => !o)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`Budget: ${budgetLabel(budget)}. ${open ? 'Hide' : 'Change'} budget`}>
+        <Text style={styles.pillText}>💵 {budgetLabel(budget)}</Text>
+        <Text style={styles.pillEdit}>{open ? 'Done ˄' : 'Change ›'}</Text>
+      </Pressable>
 
+      {open && (
+        <View style={styles.body}>
           <Text style={styles.intro}>
             How much do you want to spend on food? Your meals, swaps and grocery list update to match.
           </Text>
@@ -77,36 +70,39 @@ export default function BudgetScreen() {
                 Your first shop costs more (about {money(week?.checkout ?? 0)}) because you buy whole packages.
                 Pantry items like rice, oats and oil last into the next weeks.
               </Text>
-
-              <Pressable style={styles.btn} onPress={() => router.navigate('/my-meals')} accessibilityRole="button">
-                <Text style={styles.btnText}>See your meals →</Text>
-              </Pressable>
             </View>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.bg },
-  content: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 20, paddingBottom: 64 },
-  header: {
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  card: {
+    marginTop: 16,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cardOpen: { borderColor: colors.borderStrong },
+  pill: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minHeight: 44,
   },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: colors.text },
-  headerLogo: { width: 96, height: 30 },
-  intro: { fontSize: 14, color: colors.textMuted, lineHeight: 20, marginTop: 16 },
+  pillText: { fontSize: 14, color: colors.text, fontWeight: '600', flex: 1 },
+  pillEdit: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
+  body: { paddingHorizontal: 16, paddingBottom: 16 },
+  intro: { fontSize: 14, color: colors.textMuted, lineHeight: 20 },
 
   result: {
-    marginTop: 20,
-    backgroundColor: colors.surface,
+    marginTop: 16,
+    backgroundColor: colors.bg,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
@@ -121,17 +117,4 @@ const styles = StyleSheet.create({
   statusOver: { backgroundColor: colors.warningBg, borderColor: colors.warningBorder },
   statusText: { fontSize: 13, fontWeight: '600', lineHeight: 18 },
   note: { fontSize: 12, color: colors.textSubtle, lineHeight: 17, marginTop: 10 },
-
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
-  emptyTitle: { color: colors.text, fontSize: 22, fontWeight: '800' },
-  emptyText: { color: colors.textMuted, fontSize: 15, textAlign: 'center' },
-  btn: {
-    backgroundColor: colors.accent,
-    borderRadius: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    marginTop: 14,
-    alignItems: 'center',
-  },
-  btnText: { color: colors.onAccent, fontWeight: '700', fontSize: 15 },
 });

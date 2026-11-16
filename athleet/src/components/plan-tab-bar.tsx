@@ -11,7 +11,6 @@ export const PLAN_TABS = [
   { name: 'my-plan', href: '/my-plan', title: 'Your Plan', icon: '📋', needsPlan: true },
   { name: 'recap', href: '/recap', title: 'Workout Plan', icon: '📅', needsPlan: true },
   { name: 'my-meals', href: '/my-meals', title: 'Your Meals', icon: '🥗', needsPlan: true },
-  { name: 'budget', href: '/budget', title: 'Budget', icon: '💵', needsPlan: true },
 ] as const;
 
 export const TAB_COLORS = {
@@ -22,8 +21,9 @@ export const TAB_COLORS = {
 };
 
 /**
- * Keeps the bottom tabs on screen outside the (tabs) group (home, questionnaire, coach
- * chat/workout) once a plan has been selected. Inside (tabs) the real tab bar already shows.
+ * Keeps the bottom tabs on screen outside the (tabs) group (coach chat/workout, plan, etc.)
+ * once a plan has been selected. Not shown on the home page or questionnaire. Inside (tabs)
+ * the real tab bar already shows.
  */
 export function PlanTabBar() {
   const selected = useSelectedPlan();
@@ -31,7 +31,9 @@ export function PlanTabBar() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  if (!selected || segments[0] === '(tabs)') return null;
+  // Hidden on the home page (no segments) and the questionnaire, and inside (tabs) where the real bar shows.
+  const route = segments[0];
+  if (!selected || route === undefined || route === 'index' || route === 'questionnaire' || route === '(tabs)') return null;
 
   // A coach session belongs to the Coaches tab; other screens have no active tab.
   const active = segments[0] === 'chat' ? 'coaches' : null;
