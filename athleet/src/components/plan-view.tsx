@@ -326,341 +326,341 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
               <Text style={styles.quoteText}>{`"${quote}"`}</Text>
             </View>
 
-        {/* Baseline Personalization Badges */}
-        <View style={styles.baselineBox}>
-          <Text style={styles.baselineHeader}>ACTIVE BASELINE ADAPTATION</Text>
-          <Text style={styles.baselineSub}>
-            Calibrated for: <Text style={styles.baselineHighlight}>{age} yrs</Text> •{' '}
-            <Text style={styles.baselineHighlight}>{level.toUpperCase()}</Text> •{' '}
-            <Text style={styles.baselineHighlight}>{equipment.replace(/_/g, ' ')}</Text> •{' '}
-            <Text style={styles.baselineHighlight}>{daysPerWeek} {daysPerWeek === 1 ? 'day' : 'days'}/wk</Text> •{' '}
-            <Text style={styles.baselineHighlight}>{sessionMinutes} min</Text>
-          </Text>
-
-          {adaptationPills.length > 0 && (
-            <View style={styles.pillsRow}>
-              {adaptationPills.map((pill, idx) => {
-                const parts = pill.split(': ');
-                const label = parts[0];
-                return (
-                  <View key={idx} style={styles.adaptationPill}>
-                    <Text style={styles.adaptationPillText}>{label}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-        </View>
-
-        {/* Mini weekly recap progress banner */}
-        {mode === 'saved' && (
-          <Pressable
-            style={styles.miniRecapBanner}
-            onPress={() => setActiveTab('recap')}
-            accessibilityRole="button"
-            accessibilityLabel="Open weekly recap and calendar">
-            <View style={styles.miniRecapLeft}>
-              <Text style={styles.miniRecapTitle}>
-                ⚡ This Week: {weekCompletedCount} of {daysPerWeek} Completed
+            {/* Baseline Personalization Badges */}
+            <View style={styles.baselineBox}>
+              <Text style={styles.baselineHeader}>ACTIVE BASELINE ADAPTATION</Text>
+              <Text style={styles.baselineSub}>
+                Calibrated for: <Text style={styles.baselineHighlight}>{age} yrs</Text> •{' '}
+                <Text style={styles.baselineHighlight}>{level.toUpperCase()}</Text> •{' '}
+                <Text style={styles.baselineHighlight}>{equipment.replace(/_/g, ' ')}</Text> •{' '}
+                <Text style={styles.baselineHighlight}>{daysPerWeek} {daysPerWeek === 1 ? 'day' : 'days'}/wk</Text> •{' '}
+                <Text style={styles.baselineHighlight}>{sessionMinutes} min</Text>
               </Text>
-              <Text style={styles.miniRecapSub}>
-                Tap to inspect clickable calendar & set log history
-              </Text>
-            </View>
-            <Text style={styles.miniRecapArrow}>➔</Text>
-          </Pressable>
-        )}
 
-        {workoutInProgress && <Text style={styles.doneNote}>Resume and save your current workout before changing your schedule.</Text>}
-        {/* Training days per week */}
-        <View style={styles.daysPicker}>
-          <Text style={styles.daysPickerLabel}>DAYS PER WEEK</Text>
-          <View style={styles.daysPickerRow}>
-            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-              <Pressable
-                key={n}
-                disabled={workoutInProgress}
-                onPress={() => changeDays(n)}
-                style={[styles.daysChip, daysPerWeek === n && styles.daysChipActive]}
-                accessibilityRole="button"
-                accessibilityLabel={`Train ${n} days per week`}>
-                <Text style={[styles.daysChipText, daysPerWeek === n && styles.daysChipTextActive]}>{n}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* Minutes per session */}
-        <View style={styles.daysPicker}>
-          <Text style={styles.daysPickerLabel}>MINUTES PER SESSION</Text>
-          <View style={styles.daysPickerRow}>
-            {[...new Set([20, 30, 45, 60, 90, 120, sessionMinutes])].sort((a, b) => a - b).map((n) => (
-              <Pressable
-                key={n}
-                disabled={workoutInProgress}
-                onPress={() => changeMinutes(n)}
-                style={[styles.daysChip, styles.minutesChip, sessionMinutes === n && styles.daysChipActive]}
-                accessibilityRole="button"
-                accessibilityLabel={`Train ${n} minutes per session`}>
-                <Text style={[styles.daysChipText, sessionMinutes === n && styles.daysChipTextActive]}>{n}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        {/* Warnings: not enough to reach the goal, or not enough rest */}
-        {planWarnings({ age, level, goal: goal as any, daysPerWeek, sessionMinutes }).map((w) => (
-          <View key={w.title} style={[styles.warnCard, w.tone === 'high' ? styles.warnHigh : styles.warnLow]}>
-            <Text style={styles.warnTitle}>{w.tone === 'high' ? '⚠️ Needs more rest: ' : '⚠️ Might not reach your goal: '}{w.title}</Text>
-            <Text style={styles.warnText}>{w.text}</Text>
-          </View>
-        ))}
-
-        {/* Day selection tabs */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.dayTabs}
-          style={styles.dayTabsScroll}
-        >
-          {plan.days.map((day, index) => (
-            <Pressable
-              key={index}
-              onPress={() => setExpandedDay(index)}
-              style={[styles.dayTab, expandedDay === index && styles.dayTabActive]}
-              accessibilityRole="button"
-            >
-              <Text style={[styles.dayTabText, expandedDay === index && styles.dayTabTextActive]}>
-                {day.name.split(' — ')[0]}
-                {mode === 'saved' && lastLogForDay(logs, coachId, index) ? ' ✓' : ''}
-              </Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {/* Active day details */}
-        {plan.days[expandedDay] && (
-          <View style={styles.dayCard}>
-            <View style={styles.dayHeader}>
-              <Text style={styles.dayTitle}>{plan.days[expandedDay].name}</Text>
-              <Text style={styles.dayFocus}>{plan.days[expandedDay].focus}</Text>
-              {plan.days[expandedDay].estimatedMinutes && (
-                <Text style={styles.dayMeta}>
-                  ⏱ {plan.days[expandedDay].estimatedMinutes} min session • {plan.days[expandedDay].exercises.length} exercises
-                </Text>
+              {adaptationPills.length > 0 && (
+                <View style={styles.pillsRow}>
+                  {adaptationPills.map((pill, idx) => {
+                    const parts = pill.split(': ');
+                    const label = parts[0];
+                    return (
+                      <View key={idx} style={styles.adaptationPill}>
+                        <Text style={styles.adaptationPillText}>{label}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
               )}
             </View>
 
-            {/* Warm-up */}
-            {plan.days[expandedDay].warmUp && (
-              <View style={styles.phaseBlock}>
-                <Text style={styles.phaseLabel}>🔥 WARM-UP & MOBILITY</Text>
-                <Text style={styles.phaseText}>{plan.days[expandedDay].warmUp}</Text>
-              </View>
+            {/* Mini weekly recap progress banner */}
+            {mode === 'saved' && (
+              <Pressable
+                style={styles.miniRecapBanner}
+                onPress={() => setActiveTab('recap')}
+                accessibilityRole="button"
+                accessibilityLabel="Open weekly recap and calendar">
+                <View style={styles.miniRecapLeft}>
+                  <Text style={styles.miniRecapTitle}>
+                    ⚡ This Week: {weekCompletedCount} of {daysPerWeek} Completed
+                  </Text>
+                  <Text style={styles.miniRecapSub}>
+                    Tap to inspect clickable calendar & set log history
+                  </Text>
+                </View>
+                <Text style={styles.miniRecapArrow}>➔</Text>
+              </Pressable>
             )}
 
-            {/* Exercises */}
-            {plan.days[expandedDay].exercises.map((exercise, exIndex) => (
-              <View key={exIndex} style={styles.exerciseCard}>
-                <View style={styles.exerciseHeader}>
-                  <View style={styles.exerciseNumber}>
-                    <Text style={styles.exerciseNumberText}>{exIndex + 1}</Text>
-                  </View>
-                  <Text style={styles.exerciseName}>{exercise.name}</Text>
-                </View>
+            {workoutInProgress && <Text style={styles.doneNote}>Resume and save your current workout before changing your schedule.</Text>}
+            {/* Training days per week */}
+            <View style={styles.daysPicker}>
+              <Text style={styles.daysPickerLabel}>DAYS PER WEEK</Text>
+              <View style={styles.daysPickerRow}>
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                  <Pressable
+                    key={n}
+                    disabled={workoutInProgress}
+                    onPress={() => changeDays(n)}
+                    style={[styles.daysChip, daysPerWeek === n && styles.daysChipActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Train ${n} days per week`}>
+                    <Text style={[styles.daysChipText, daysPerWeek === n && styles.daysChipTextActive]}>{n}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
 
-                <View style={styles.exerciseStats}>
-                  <View style={styles.stat}>
-                    <Text style={styles.statLabel}>Sets</Text>
-                    <Text style={styles.statValue}>{exercise.sets}</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.stat}>
-                    <Text style={styles.statLabel}>Reps</Text>
-                    <Text style={styles.statValue}>{exercise.reps}</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.stat}>
-                    <Text style={styles.statLabel}>Rest</Text>
-                    <Text style={styles.statValue}>{exercise.rest}</Text>
-                  </View>
-                </View>
+            {/* Minutes per session */}
+            <View style={styles.daysPicker}>
+              <Text style={styles.daysPickerLabel}>MINUTES PER SESSION</Text>
+              <View style={styles.daysPickerRow}>
+                {[...new Set([20, 30, 45, 60, 90, 120, sessionMinutes])].sort((a, b) => a - b).map((n) => (
+                  <Pressable
+                    key={n}
+                    disabled={workoutInProgress}
+                    onPress={() => changeMinutes(n)}
+                    style={[styles.daysChip, styles.minutesChip, sessionMinutes === n && styles.daysChipActive]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Train ${n} minutes per session`}>
+                    <Text style={[styles.daysChipText, sessionMinutes === n && styles.daysChipTextActive]}>{n}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
 
-                {exercise.notes && (
-                  <Text style={styles.exerciseNotes}>💡 {exercise.notes}</Text>
-                )}
-                {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
-                  <View style={styles.muscleTags}>
-                    {exercise.muscleGroups.map((mg) => (
-                      <View key={mg} style={styles.muscleTag}>
-                        <Text style={styles.muscleTagText}>{mg}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
+            {/* Warnings: not enough to reach the goal, or not enough rest */}
+            {planWarnings({ age, level, goal: goal as any, daysPerWeek, sessionMinutes }).map((w) => (
+              <View key={w.title} style={[styles.warnCard, w.tone === 'high' ? styles.warnHigh : styles.warnLow]}>
+                <Text style={styles.warnTitle}>{w.tone === 'high' ? '⚠️ Needs more rest: ' : '⚠️ Might not reach your goal: '}{w.title}</Text>
+                <Text style={styles.warnText}>{w.text}</Text>
               </View>
             ))}
 
-            {/* Cool-down */}
-            {plan.days[expandedDay].coolDown && (
-              <View style={styles.phaseBlock}>
-                <Text style={styles.phaseLabel}>🧊 COOL-DOWN & RECOVERY</Text>
-                <Text style={styles.phaseText}>{plan.days[expandedDay].coolDown}</Text>
-              </View>
-            )}
+            {/* Day selection tabs */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.dayTabs}
+              style={styles.dayTabsScroll}
+            >
+              {plan.days.map((day, index) => (
+                <Pressable
+                  key={index}
+                  onPress={() => setExpandedDay(index)}
+                  style={[styles.dayTab, expandedDay === index && styles.dayTabActive]}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.dayTabText, expandedDay === index && styles.dayTabTextActive]}>
+                    {day.name.split(' — ')[0]}
+                    {mode === 'saved' && lastLogForDay(logs, coachId, index) ? ' ✓' : ''}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
 
-            {/* Start this day's workout (only for the selected plan) */}
-            {mode === 'saved' && (() => {
-              const last = lastLogForDay(logs, coachId, expandedDay);
-              return (
-                <View style={styles.startWrap}>
-                  {last && (
-                    <Text style={styles.doneNote}>
-                      ✓ Done this week · {last.sets.length} {last.sets.length === 1 ? 'set' : 'sets'} in {Math.max(1, last.minutes)} min
+            {/* Active day details */}
+            {plan.days[expandedDay] && (
+              <View style={styles.dayCard}>
+                <View style={styles.dayHeader}>
+                  <Text style={styles.dayTitle}>{plan.days[expandedDay].name}</Text>
+                  <Text style={styles.dayFocus}>{plan.days[expandedDay].focus}</Text>
+                  {plan.days[expandedDay].estimatedMinutes && (
+                    <Text style={styles.dayMeta}>
+                      ⏱ {plan.days[expandedDay].estimatedMinutes} min session • {plan.days[expandedDay].exercises.length} exercises
                     </Text>
                   )}
-                  <Pressable
-                    style={styles.startBtn}
-                    disabled={regenerating}
-                    onPress={() => onStartWorkout ? onStartWorkout(expandedDay) : router.push({ pathname: '/workout', params: { day: String(expandedDay) } })}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Start day ${expandedDay + 1} workout`}>
-                    <Text style={styles.startText}>
-                      ▶  {last ? 'Do it again' : `Start Day ${expandedDay + 1} workout`}
-                    </Text>
-                  </Pressable>
                 </View>
-              );
-            })()}
-          </View>
-        )}
 
-        {/* Nutrition Blueprint (the saved plan shows it in the "Your Meals" tab; the coach session has no tab bar, so show it inline there) */}
-        {(mode === 'preview' || embedded) && (
-          <NutritionBlueprint
-            summary={plan.nutrition.summary}
-            tips={plan.nutrition.tips}
-            targets={plan.nutrition.targets}
-            mealPlan={plan.nutrition.mealPlan}
-            trainingDays={trainingWeekdays(plan.days)}
-          />
-        )}
+                {/* Warm-up */}
+                {plan.days[expandedDay].warmUp && (
+                  <View style={styles.phaseBlock}>
+                    <Text style={styles.phaseLabel}>🔥 WARM-UP & MOBILITY</Text>
+                    <Text style={styles.phaseText}>{plan.days[expandedDay].warmUp}</Text>
+                  </View>
+                )}
 
-        {/* Santa Cruz Location-Based Map Integration */}
-        <View style={styles.venueCard}>
-          <View style={styles.venueHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.venueTitle}>📍 Where to Train (Santa Cruz)</Text>
-              <Text style={styles.venueSub}>Equipment-matched facilities near you</Text>
-            </View>
-            <Pressable
-              style={styles.exploreMapBtn}
-              onPress={() => setShowMapModal(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Open interactive Santa Cruz training map">
-              <Text style={styles.exploreMapBtnText}>🗺️ Interactive Map</Text>
-            </Pressable>
-          </View>
-          {getRecommendedVenues(coachId, equipment).map((venue) => (
-            <View key={venue.id} style={styles.venueItem}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.venueName}>{venue.name} <Text style={styles.venueDistance}>• {venue.distance}</Text></Text>
-                <Text style={styles.venueAddress}>{venue.address}</Text>
-                <Text style={styles.venueWhy}>💡 {venue.recommendedFor}</Text>
-                <View style={styles.venueTagsRow}>
-                  {venue.equipmentTags.map((tag) => (
-                    <View key={tag} style={styles.venueTag}>
-                      <Text style={styles.venueTagText}>{tag}</Text>
+                {/* Exercises */}
+                {plan.days[expandedDay].exercises.map((exercise, exIndex) => (
+                  <View key={exIndex} style={styles.exerciseCard}>
+                    <View style={styles.exerciseHeader}>
+                      <View style={styles.exerciseNumber}>
+                        <Text style={styles.exerciseNumberText}>{exIndex + 1}</Text>
+                      </View>
+                      <Text style={styles.exerciseName}>{exercise.name}</Text>
                     </View>
-                  ))}
-                </View>
-              </View>
-              <View style={styles.venueBtnCol}>
-                <Pressable
-                  style={styles.inAppMapBtn}
-                  onPress={() => openInAppMap(venue)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${venue.name} in-app map`}>
-                  <Text style={styles.inAppMapText}>🗺️ In-App</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.nativeMapBtn}
-                  onPress={() => openNativeMap(venue)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${venue.name} in Apple Maps`}>
-                  <Text style={styles.nativeMapText}>↗ Native</Text>
-                </Pressable>
-              </View>
-            </View>
-          ))}
-        </View>
 
-        {/* Recovery & Longevity */}
-        {plan.recovery && (
-          <View style={styles.infoCard}>
-            <Text style={styles.infoTitle}>💤 Longevity & Recovery</Text>
-            <Text style={styles.infoSummary}>{plan.recovery.summary}</Text>
-            {plan.recovery.tips.map((tip, i) => (
-              <View key={i} style={styles.tipRow}>
-                <Text style={styles.tipBullet}>•</Text>
-                <Text style={styles.tipText}>{tip}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+                    <View style={styles.exerciseStats}>
+                      <View style={styles.stat}>
+                        <Text style={styles.statLabel}>Sets</Text>
+                        <Text style={styles.statValue}>{exercise.sets}</Text>
+                      </View>
+                      <View style={styles.statDivider} />
+                      <View style={styles.stat}>
+                        <Text style={styles.statLabel}>Reps</Text>
+                        <Text style={styles.statValue}>{exercise.reps}</Text>
+                      </View>
+                      <View style={styles.statDivider} />
+                      <View style={styles.stat}>
+                        <Text style={styles.statLabel}>Rest</Text>
+                        <Text style={styles.statValue}>{exercise.rest}</Text>
+                      </View>
+                    </View>
 
-        {/* Actions */}
-        <View style={styles.actions}>
-          {mode === 'preview' ? (
-            <Pressable
-              style={[styles.selectBtn, isSelected && styles.selectBtnDone]}
-              onPress={handleSelect}
-              disabled={isSelected}
-              accessibilityRole="button"
-              accessibilityLabel="Select this plan">
-              <Text style={[styles.selectText, isSelected && styles.selectTextDone]}>
-                {isSelected ? '✓  This is your plan' : '✓  Select this plan'}
-              </Text>
-            </Pressable>
-          ) : (
-            <Pressable
-              style={styles.chatBtn}
-              onPress={() => router.navigate('/coaches')}
-              accessibilityRole="button">
-              <Text style={styles.chatBtnText}>🔁  Switch coach</Text>
-            </Pressable>
-          )}
+                    {exercise.notes && (
+                      <Text style={styles.exerciseNotes}>💡 {exercise.notes}</Text>
+                    )}
+                    {exercise.muscleGroups && exercise.muscleGroups.length > 0 && (
+                      <View style={styles.muscleTags}>
+                        {exercise.muscleGroups.map((mg) => (
+                          <View key={mg} style={styles.muscleTag}>
+                            <Text style={styles.muscleTagText}>{mg}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                ))}
 
-          <Pressable
-            style={[styles.regenerateBtn, regenerating && styles.regenerateBtnActive]}
-            onPress={handleRegenerate}
-            disabled={regenerating || workoutInProgress}
-            accessibilityRole="button"
-          >
-            {regenerating ? (
-              <View style={styles.row}>
-                <ActivityIndicator size="small" color={colors.accent} />
-                <Text style={styles.regenerateText}>  Generating Variation...</Text>
+                {/* Cool-down */}
+                {plan.days[expandedDay].coolDown && (
+                  <View style={styles.phaseBlock}>
+                    <Text style={styles.phaseLabel}>🧊 COOL-DOWN & RECOVERY</Text>
+                    <Text style={styles.phaseText}>{plan.days[expandedDay].coolDown}</Text>
+                  </View>
+                )}
+
+                {/* Start this day's workout (only for the selected plan) */}
+                {mode === 'saved' && (() => {
+                  const last = lastLogForDay(logs, coachId, expandedDay);
+                  return (
+                    <View style={styles.startWrap}>
+                      {last && (
+                        <Text style={styles.doneNote}>
+                          ✓ Done this week · {last.sets.length} {last.sets.length === 1 ? 'set' : 'sets'} in {Math.max(1, last.minutes)} min
+                        </Text>
+                      )}
+                      <Pressable
+                        style={styles.startBtn}
+                        disabled={regenerating}
+                        onPress={() => onStartWorkout ? onStartWorkout(expandedDay) : router.push({ pathname: '/workout', params: { day: String(expandedDay) } })}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Start day ${expandedDay + 1} workout`}>
+                        <Text style={styles.startText}>
+                          ▶  {last ? 'Do it again' : `Start Day ${expandedDay + 1} workout`}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  );
+                })()}
               </View>
-            ) : (
-              <Text style={styles.regenerateText}>🔄  Regenerate Plan (New Variation)</Text>
             )}
-          </Pressable>
 
-          {!embedded && <Pressable
-            style={styles.chatBtn}
-            onPress={() => router.push({ pathname: '/chat/[id]' as any, params: { id: coachId } })}
-            accessibilityRole="button"
-          >
-            <Text style={styles.chatBtnText}>💬  Chat with {coach?.name.split(' ')[0]}</Text>
-          </Pressable>}
-        </View>
+            {/* Nutrition Blueprint (the saved plan shows it in the "Your Meals" tab; the coach session has no tab bar, so show it inline there) */}
+            {(mode === 'preview' || embedded) && (
+              <NutritionBlueprint
+                summary={plan.nutrition.summary}
+                tips={plan.nutrition.tips}
+                targets={plan.nutrition.targets}
+                mealPlan={plan.nutrition.mealPlan}
+                trainingDays={trainingWeekdays(plan.days)}
+              />
+            )}
 
-          <Text style={styles.disclaimer}>
-            ⚕️ Always consult a physician before initiating a high-intensity training protocol.
-          </Text>
-        </>
-      )}
+            {/* Santa Cruz Location-Based Map Integration */}
+            <View style={styles.venueCard}>
+              <View style={styles.venueHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.venueTitle}>📍 Where to Train (Santa Cruz)</Text>
+                  <Text style={styles.venueSub}>Equipment-matched facilities near you</Text>
+                </View>
+                <Pressable
+                  style={styles.exploreMapBtn}
+                  onPress={() => setShowMapModal(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open interactive Santa Cruz training map">
+                  <Text style={styles.exploreMapBtnText}>🗺️ Interactive Map</Text>
+                </Pressable>
+              </View>
+              {getRecommendedVenues(coachId, equipment).map((venue) => (
+                <View key={venue.id} style={styles.venueItem}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.venueName}>{venue.name} <Text style={styles.venueDistance}>• {venue.distance}</Text></Text>
+                    <Text style={styles.venueAddress}>{venue.address}</Text>
+                    <Text style={styles.venueWhy}>💡 {venue.recommendedFor}</Text>
+                    <View style={styles.venueTagsRow}>
+                      {venue.equipmentTags.map((tag) => (
+                        <View key={tag} style={styles.venueTag}>
+                          <Text style={styles.venueTagText}>{tag}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                  <View style={styles.venueBtnCol}>
+                    <Pressable
+                      style={styles.inAppMapBtn}
+                      onPress={() => openInAppMap(venue)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${venue.name} in-app map`}>
+                      <Text style={styles.inAppMapText}>🗺️ In-App</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.nativeMapBtn}
+                      onPress={() => openNativeMap(venue)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${venue.name} in Apple Maps`}>
+                      <Text style={styles.nativeMapText}>↗ Native</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Recovery & Longevity */}
+            {plan.recovery && (
+              <View style={styles.infoCard}>
+                <Text style={styles.infoTitle}>💤 Longevity & Recovery</Text>
+                <Text style={styles.infoSummary}>{plan.recovery.summary}</Text>
+                {plan.recovery.tips.map((tip, i) => (
+                  <View key={i} style={styles.tipRow}>
+                    <Text style={styles.tipBullet}>•</Text>
+                    <Text style={styles.tipText}>{tip}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Actions */}
+            <View style={styles.actions}>
+              {mode === 'preview' ? (
+                <Pressable
+                  style={[styles.selectBtn, isSelected && styles.selectBtnDone]}
+                  onPress={handleSelect}
+                  disabled={isSelected}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select this plan">
+                  <Text style={[styles.selectText, isSelected && styles.selectTextDone]}>
+                    {isSelected ? '✓  This is your plan' : '✓  Select this plan'}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={styles.chatBtn}
+                  onPress={() => router.navigate('/coaches')}
+                  accessibilityRole="button">
+                  <Text style={styles.chatBtnText}>🔁  Switch coach</Text>
+                </Pressable>
+              )}
+
+              <Pressable
+                style={[styles.regenerateBtn, regenerating && styles.regenerateBtnActive]}
+                onPress={handleRegenerate}
+                disabled={regenerating || workoutInProgress}
+                accessibilityRole="button"
+              >
+                {regenerating ? (
+                  <View style={styles.row}>
+                    <ActivityIndicator size="small" color={colors.accent} />
+                    <Text style={styles.regenerateText}>  Generating Variation...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.regenerateText}>🔄  Regenerate Plan (New Variation)</Text>
+                )}
+              </Pressable>
+
+              {!embedded && <Pressable
+                style={styles.chatBtn}
+                onPress={() => router.push({ pathname: '/chat/[id]' as any, params: { id: coachId } })}
+                accessibilityRole="button"
+              >
+                <Text style={styles.chatBtnText}>💬  Chat with {coach?.name.split(' ')[0]}</Text>
+              </Pressable>}
+            </View>
+
+            <Text style={styles.disclaimer}>
+              ⚕️ Always consult a physician before initiating a high-intensity training protocol.
+            </Text>
+          </>
+        )}
       </ScrollView>
 
       {/* In-App Interactive Santa Cruz Map Explorer Modal */}
@@ -800,7 +800,7 @@ const styles = StyleSheet.create({
   startBtn: { backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 16, alignItems: 'center' },
   startText: { color: colors.bg, fontSize: 16, fontWeight: '800' },
   doneNote: { color: colors.successText, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: colors.accent },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: colors.text },
   selectBtn: { backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 18, alignItems: 'center' },
   selectBtnDone: { backgroundColor: colors.successBg, borderWidth: 1, borderColor: colors.successBorder },
   selectText: { color: colors.bg, fontSize: 17, fontWeight: '800' },

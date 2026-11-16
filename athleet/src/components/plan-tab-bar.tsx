@@ -6,11 +6,12 @@ import { useSelectedPlan } from '@/lib/selected-plan';
 import { colors } from '@/lib/theme';
 
 // The bottom tabs, defined once so the real tab navigator and the persistent bar below match.
+// Coaches stays a route (reached from "Browse coaches" on Your Plan) but is hidden from the bar.
 export const PLAN_TABS = [
-  { name: 'coaches', href: '/coaches', title: 'Coaches', icon: '💬', needsPlan: false },
-  { name: 'my-plan', href: '/my-plan', title: 'Your Plan', icon: '📋', needsPlan: true },
-  { name: 'recap', href: '/recap', title: 'Workout Plan', icon: '📅', needsPlan: true },
-  { name: 'my-meals', href: '/my-meals', title: 'Your Meals', icon: '🥗', needsPlan: true },
+  { name: 'coaches', href: '/coaches', title: 'Coaches', icon: '💬', needsPlan: false, hidden: true },
+  { name: 'my-plan', href: '/my-plan', title: 'Your Plan', icon: '📋', needsPlan: false, hidden: false },
+  { name: 'recap', href: '/recap', title: 'Workout Plan', icon: '📅', needsPlan: true, hidden: false },
+  { name: 'my-meals', href: '/my-meals', title: 'Your Meals', icon: '🥗', needsPlan: true, hidden: false },
 ] as const;
 
 export const TAB_COLORS = {
@@ -35,8 +36,8 @@ export function PlanTabBar() {
   const route = segments[0];
   if (!selected || route === undefined || route === 'index' || route === 'questionnaire' || route === '(tabs)') return null;
 
-  // A coach session belongs to the Coaches tab; other screens have no active tab.
-  const active = segments[0] === 'chat' ? 'coaches' : null;
+  // A coach session belongs to Your Plan (coaches are reached from there); other screens have no active tab.
+  const active = segments[0] === 'chat' ? 'my-plan' : null;
 
   function go(href: string) {
     // Pop back to the root so tab screens don't pile up on top of the stack.
@@ -46,7 +47,7 @@ export function PlanTabBar() {
 
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 6) }]} accessibilityRole="tablist">
-      {PLAN_TABS.map(tab => {
+      {PLAN_TABS.filter(tab => !tab.hidden).map(tab => {
         const focused = tab.name === active;
         const color = focused ? TAB_COLORS.active : TAB_COLORS.inactive;
         return (

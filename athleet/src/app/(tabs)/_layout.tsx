@@ -21,8 +21,12 @@ export default function TabLayout() {
           name={tab.name}
           options={{
             title: tab.title,
-            // Plan, workouts and meals only show up once a plan has been selected.
-            href: !tab.needsPlan || selected ? (tab.href as any) : null,
+            // Hidden tabs (Coaches) keep their route so /coaches still opens; only the button is hidden.
+            // (href: null would drop the route, and expo-router forbids href together with tabBarButton.)
+            // Workouts and meals only show up once a plan has been selected.
+            ...(tab.hidden
+              ? { tabBarButton: () => null, tabBarItemStyle: { display: 'none' as const } }
+              : { href: !tab.needsPlan || selected ? (tab.href as any) : null }),
             tabBarIcon: ({ color }) => <Text style={{ fontSize: 20, color }}>{tab.icon}</Text>,
           }}
         />
