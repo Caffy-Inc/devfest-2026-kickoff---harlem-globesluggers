@@ -32,6 +32,47 @@ export function planDayIndexForDate(days: { name: string }[], date: Date): numbe
   return (WEEKDAYS[days.length] ?? []).indexOf(weekday);
 }
 
+const WEEK_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const WEEKDAY_RE = /\b(mon|tues|wednes|thurs|fri|satur|sun)day\b/i;
+
+/** The weekday each plan day falls on (same order as `days`), e.g. ["Monday", "Wednesday", "Friday"]. */
+export function trainingWeekdays(days: { name: string }[]): string[] {
+  const named = days.some((d) => WEEKDAY_RE.test(d.name));
+  return days.map((d, i) => {
+    if (named) {
+      const m = d.name.match(WEEKDAY_RE);
+      return m ? m[0][0].toUpperCase() + m[0].slice(1).toLowerCase() : '';
+    }
+    return WEEKDAYS[days.length]?.[i] ?? '';
+  });
+}
+
+/**
+ * Moves one plan day to another weekday and returns the updated days and rest days.
+ * If the target weekday already has a workout, the two days swap. Day order (and so the
+ * day indexes used by workout logs) stays the same; only the weekday in each name changes.
+ */
+export function moveTrainingDay<T extends { name: string }>(
+  days: T[],
+  dayIndex: number,
+  toWeekday: string,
+): { days: T[]; restDays: string[] } {
+  const current = trainingWeekdays(days);
+  const named = days.some((d) => WEEKDAY_RE.test(d.name));
+  const from = current[dayIndex];
+  const target = current.indexOf(toWeekday);
+
+  const next = current.map((w, i) => (i === dayIndex ? toWeekday : i === target ? from : w));
+  const renamed = days.map((d, i) => {
+    const weekday = next[i];
+    if (!weekday) return d;
+    if (named && WEEKDAY_RE.test(d.name)) return { ...d, name: d.name.replace(WEEKDAY_RE, weekday) };
+    // Plans whose days had no weekday in the name get one, so the new schedule sticks.
+    return { ...d, name: `${d.name} — ${weekday}` };
+  });
+  return { days: renamed, restDays: WEEK_ORDER.filter((w) => !next.includes(w)) };
+}
+
 /** The plan day to show first: today's workout, else the next one coming up this week. */
 export function defaultPlanDayIndex(days: { name: string }[], today = new Date()): number {
   for (let ahead = 0; ahead < 7; ahead++) {

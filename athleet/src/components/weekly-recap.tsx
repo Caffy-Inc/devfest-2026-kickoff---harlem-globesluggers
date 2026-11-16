@@ -9,6 +9,7 @@ import {
 import { useRouter } from 'expo-router';
 
 import { CoachAvatar } from '@/components/coach-avatar';
+import { WorkoutCalendarModal } from '@/components/workout-calendar';
 import { getCoach } from '@/data/coaches';
 import type { GeneratePlanResponse } from '@/lib/api';
 import { planDayIndexForDate, weekdayName } from '@/lib/plan';
@@ -37,6 +38,7 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
 
   // Offset in weeks: 0 = current week, -1 = last week, etc.
   const [weekOffset, setWeekOffset] = useState<number>(0);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Reference date for the selected week
   const referenceDate = useMemo(() => {
@@ -194,8 +196,17 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
       {/* Clickable Calendar Section */}
       <View style={styles.calendarSection}>
         <View style={styles.calendarHeaderRow}>
-          <Text style={styles.sectionTitle}>📅 Clickable Calendar</Text>
-          <Text style={styles.calendarHint}>Tap a day to inspect details</Text>
+          <View>
+            <Text style={styles.sectionTitle}>📅 Clickable Calendar</Text>
+            <Text style={styles.calendarHint}>Tap a day to inspect details</Text>
+          </View>
+          <Pressable
+            style={styles.fullCalendarBtn}
+            onPress={() => setShowCalendar(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Open full calendar">
+            <Text style={styles.fullCalendarBtnText}>🗓 Full Calendar</Text>
+          </Pressable>
         </View>
 
         <View style={styles.calendarRow}>
@@ -251,6 +262,9 @@ export function WeeklyRecapView({ coachId, plan, daysPerWeek }: WeeklyRecapProps
           })}
         </View>
       </View>
+
+      {/* Month view: days worked out + change training days. Mounted only while open so it starts on today. */}
+      {showCalendar && <WorkoutCalendarModal visible onClose={() => setShowCalendar(false)} />}
 
       {/* Selected Day Inspector Card */}
       <View style={styles.inspectorCard}>
@@ -492,7 +506,16 @@ const styles = StyleSheet.create({
   },
   calendarHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionTitle: { fontSize: 15, fontWeight: '800', color: colors.text },
-  calendarHint: { fontSize: 11, color: colors.textSubtle },
+  calendarHint: { fontSize: 11, color: colors.textSubtle, marginTop: 2 },
+  fullCalendarBtn: {
+    backgroundColor: colors.accentSoft,
+    borderColor: colors.accentBorder,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  fullCalendarBtnText: { color: colors.accent, fontSize: 12, fontWeight: '800' },
   calendarRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
   dayColumn: {
     flex: 1,
