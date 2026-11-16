@@ -33,6 +33,11 @@ export const CONTAINS: Partial<Record<IngredientId, DietFlag[]>> = {
   turkey_deli: ['poultry'],
   lean_beef: ['red_meat'],
   sirloin: ['red_meat'],
+  flank_steak: ['red_meat'],
+  // Most jerky is marinated in soy sauce, which contains wheat.
+  beef_jerky: ['red_meat', 'soy', 'gluten'],
+  pork_tenderloin: ['pork'],
+  pork_chop: ['pork'],
   salmon: ['fish'],
   cod: ['fish'],
   tuna: ['fish'],

@@ -1,5 +1,5 @@
 import { INGREDIENTS, PANTRY_COST_PER_SERVING, priceFor, type IngredientId } from '@/data/ingredients';
-import { getRestriction, recipeAllowed, type RestrictionId } from '@/data/dietary';
+import { getRestriction, recipeAllowed, recipeFlags, type RestrictionId } from '@/data/dietary';
 import { RECIPES, type MealSlot, type Recipe, type RecipeTag } from '@/data/recipes';
 import type { BudgetSetting } from '@/lib/budget-store';
 import type { Goal, NutritionTargets } from '@/lib/types';
@@ -46,6 +46,7 @@ export type MealSlotPlan = {
 };
 
 export type GroceryItem = {
+  id: IngredientId;
   name: string;
   weeklyAmount: string;
   /** Cost of the amount actually used in a week. */
@@ -186,7 +187,12 @@ export function buildMeal(recipe: Recipe, servings: number, coachId?: string): P
 }
 
 /** Rank recipes for a slot by coach style and goal. */
+const PLANT_BASED: RestrictionId[] = ['vegetarian', 'vegan', 'pescatarian'];
+
 function rankRecipes(slot: MealSlot, goal: Goal, coachId: string, restrictions: RestrictionId[]): Recipe[] {
+  // Meat-eaters: favor recipes with chicken, turkey, beef or pork so the plant-based
+  // library doesn't crowd them out.
+  const eatsMeat = !restrictions.some((r) => PLANT_BASED.includes(r));
   const scored = RECIPES.filter((r) => r.slot === slot && recipeAllowed(r, restrictions)).map((r) => {
     const n = baseNutrition(r);
     const proteinShare = (n.protein * 4) / Math.max(1, n.kcal); // 0..1
@@ -194,6 +200,10 @@ function rankRecipes(slot: MealSlot, goal: Goal, coachId: string, restrictions: 
     if (r.coachPicks?.includes(coachId)) score += 3;
     if (r.tags.includes('budget')) score += 0.5;
     if (r.tags.includes('meal_prep')) score += 0.3;
+    if (eatsMeat) {
+      const f = recipeFlags(r);
+      if (f.has('poultry') || f.has('red_meat') || f.has('pork')) score += 1;
+    }
     switch (goal) {
       case 'lose_fat':
       case 'cut':
@@ -235,13 +245,16 @@ export function dayTotals(meals: PlannedMeal[]): DayTotals {
   );
 }
 
-/** Shopping list for eating these meals every day for a week. */
-export function groceryList(meals: PlannedMeal[]): GroceryItem[] {
+/**
+ * Shopping list for these meals. By default each meal is eaten every day for a week
+ * (times = 7); pass times = 1 for a list where every meal appears once per eating.
+ */
+export function groceryList(meals: PlannedMeal[], times = 7): GroceryItem[] {
   const grams = new Map<IngredientId, number>();
   for (const meal of meals) {
     const recipe = RECIPES.find((r) => r.id === meal.recipeId)!;
     for (const { id, g } of recipe.ingredients) {
-      grams.set(id, (grams.get(id) ?? 0) + g * meal.servings * 7);
+      grams.set(id, (grams.get(id) ?? 0) + g * meal.servings * times);
     }
   }
   return [...grams.entries()]
@@ -249,6 +262,7 @@ export function groceryList(meals: PlannedMeal[]): GroceryItem[] {
       const ing = INGREDIENTS[id];
       const packages = Math.max(1, Math.ceil(g / ing.pkg.grams - 0.05));
       return {
+        id,
         name: ing.name,
         weeklyAmount: weeklyAmount(id, g),
         usedCost: round2(priceFor(id, g)),

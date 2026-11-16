@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BudgetOptions } from '@/components/budget-options';
 import { HomeLogo } from '@/components/home-logo';
+import { defaultWeek } from '@/lib/meal-week';
 import { colors } from '@/lib/theme';
 import { useCurrentMealPlan } from '@/lib/use-meal-plan';
 
@@ -27,7 +28,8 @@ export default function BudgetScreen() {
     );
   }
 
-  const weekly = mealPlan?.costPerWeek ?? 0;
+  const week = mealPlan ? defaultWeek(mealPlan) : null;
+  const weekly = week?.cost ?? 0;
   const info = mealPlan?.budget;
   const limit = budget.mode === 'weekly' ? budget.weeklyLimit : undefined;
   const over = !!limit && weekly > limit + 0.005;
@@ -55,7 +57,7 @@ export default function BudgetScreen() {
                 <Text style={styles.resultUnit}> / week</Text>
               </Text>
               <Text style={styles.resultSub}>
-                {money(mealPlan.day.cost)} a day · about {money(mealPlan.avgCostPerMeal)} a meal
+                {money(weekly / 7)} a day · about {money(week?.avgCostPerMeal ?? 0)} a meal
               </Text>
 
               {limit != null && (
@@ -72,7 +74,7 @@ export default function BudgetScreen() {
                 <Text style={styles.note}>The cheapest plan for you would cost {money(info.cheapestPerWeek)}/week.</Text>
               )}
               <Text style={styles.note}>
-                Your first shop costs more (about {money(mealPlan.groceryCheckoutTotal)}) because you buy whole packages.
+                Your first shop costs more (about {money(week?.checkout ?? 0)}) because you buy whole packages.
                 Pantry items like rice, oats and oil last into the next weeks.
               </Text>
 

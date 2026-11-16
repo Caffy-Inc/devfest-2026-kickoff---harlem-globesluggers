@@ -6,6 +6,7 @@ import { DietaryRestrictions } from '@/components/dietary-restrictions';
 import { HomeLogo } from '@/components/home-logo';
 import { NutritionBlueprint } from '@/components/nutrition-blueprint';
 import { budgetLabel } from '@/components/budget-options';
+import { trainingWeekdays } from '@/lib/plan';
 import { useCurrentMealPlan } from '@/lib/use-meal-plan';
 import { colors } from '@/lib/theme';
 
@@ -50,6 +51,7 @@ export default function MyMealsScreen() {
           tips={nutrition.tips}
           targets={nutrition.targets}
           mealPlan={mealPlan}
+          trainingDays={trainingWeekdays(selected.plan.days)}
         />
       </ScrollView>
     </SafeAreaView>

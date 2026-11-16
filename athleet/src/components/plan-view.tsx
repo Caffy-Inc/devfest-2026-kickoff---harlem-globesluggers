@@ -18,7 +18,7 @@ import { NutritionBlueprint } from '@/components/nutrition-blueprint';
 import { WeeklyRecapView } from '@/components/weekly-recap';
 import { getCoach } from '@/data/coaches';
 import { generatePlan, type GeneratePlanResponse } from '@/lib/api';
-import { defaultPlanDayIndex, planWarnings } from '@/lib/plan';
+import { defaultPlanDayIndex, planWarnings, trainingWeekdays } from '@/lib/plan';
 import { getProfile, updateProfile } from '@/lib/profile-store';
 import { selectPlan, useSelectedPlan } from '@/lib/selected-plan';
 import {
@@ -542,6 +542,7 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
             tips={plan.nutrition.tips}
             targets={plan.nutrition.targets}
             mealPlan={plan.nutrition.mealPlan}
+            trainingDays={trainingWeekdays(plan.days)}
           />
         )}
 
