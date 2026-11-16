@@ -11,6 +11,7 @@ export const PLAN_TABS = [
   { name: 'my-plan', href: '/my-plan', title: 'Your Plan', icon: '📋', needsPlan: true },
   { name: 'recap', href: '/recap', title: 'Workout Plan', icon: '📅', needsPlan: true },
   { name: 'my-meals', href: '/my-meals', title: 'Your Meals', icon: '🥗', needsPlan: true },
+  { name: 'budget', href: '/budget', title: 'Budget', icon: '💵', needsPlan: true },
 ] as const;
 
 export const TAB_COLORS = {

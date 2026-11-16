@@ -98,6 +98,13 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) 
         </Text>
       )}
 
+      {mealPlan.budget?.mode === 'weekly' && mealPlan.budget.weeklyLimit != null && (
+        <BudgetLine limit={mealPlan.budget.weeklyLimit} weekly={totals.cost * 7} />
+      )}
+      {mealPlan.budget?.mode === 'cheapest' && (
+        <Text style={styles.totalsLine}>🪙 Cheapest-possible mode: every meal and swap is sorted by price.</Text>
+      )}
+
       {/* Meals */}
       {mealPlan.slots.map((slot, i) => {
         const meal = perSlot[i];
@@ -242,6 +249,17 @@ export function NutritionBlueprint({ summary, tips, targets, mealPlan }: Props) 
 
       <Text style={styles.priceNote}>{mealPlan.priceNote}</Text>
     </View>
+  );
+}
+
+function BudgetLine({ limit, weekly }: { limit: number; weekly: number }) {
+  const over = weekly > limit + 0.005;
+  return (
+    <Text style={[styles.totalsLine, { color: over ? colors.warning : colors.successText }]}>
+      {over
+        ? `⚠ ${money(weekly)}/wk is ${money(weekly - limit)} over your ${money(limit)} budget`
+        : `✓ ${money(weekly)}/wk fits your ${money(limit)} budget`}
+    </Text>
   );
 }
 

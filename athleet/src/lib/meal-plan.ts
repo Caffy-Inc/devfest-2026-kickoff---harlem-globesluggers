@@ -1,6 +1,7 @@
 import { INGREDIENTS, PANTRY_COST_PER_SERVING, priceFor, type IngredientId } from '@/data/ingredients';
 import { getRestriction, recipeAllowed, type RestrictionId } from '@/data/dietary';
 import { RECIPES, type MealSlot, type Recipe, type RecipeTag } from '@/data/recipes';
+import type { BudgetSetting } from '@/lib/budget-store';
 import type { Goal, NutritionTargets } from '@/lib/types';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -59,6 +60,8 @@ export type MealPlan = {
   showNumbers: boolean;
   /** Dietary restrictions every recipe in this plan respects. */
   restrictions?: RestrictionId[];
+  /** How the food budget shaped this plan. */
+  budget?: BudgetSummary;
   slots: MealSlotPlan[];
   /** Totals for the recommended pick in every slot. */
   day: DayTotals;
@@ -68,6 +71,15 @@ export type MealPlan = {
   groceryCheckoutTotal: number;
   tips: string[];
   priceNote: string;
+};
+
+export type BudgetSummary = {
+  mode: BudgetSetting['mode'];
+  weeklyLimit?: number;
+  /** Cheapest possible week that still respects calories and dietary restrictions. */
+  cheapestPerWeek: number;
+  /** True when even the cheapest menu costs more than the weekly limit. */
+  overBudget: boolean;
 };
 
 export type DayTotals = { kcal: number; protein: number; carbs: number; fat: number; cost: number };
@@ -248,6 +260,82 @@ export function groceryList(meals: PlannedMeal[]): GroceryItem[] {
     .sort((a, b) => b.checkoutCost - a.checkoutCost);
 }
 
+// ─── Budget ─────────────────────────────────────────────────────────────────
+
+/**
+ * Pick one meal per slot so the day costs at most `dailyLimit`, preferring the
+ * best-ranked recipes (lowest total rank index). Returns null if nothing fits.
+ * Slots have at most ~12 candidates, so checking every combination is instant.
+ */
+function bestWithinBudget(candidates: PlannedMeal[][], dailyLimit: number): number[] | null {
+  const filled = candidates.map((c, i) => ({ c, i })).filter(({ c }) => c.length > 0);
+  let best: number[] | null = null;
+  let bestRank = Infinity;
+  const choice = new Array<number>(filled.length).fill(0);
+
+  // Cheapest possible cost of the remaining slots, for pruning.
+  const minCost = filled.map(({ c }) => Math.min(...c.map((m) => m.cost)));
+  const minRest = minCost.map((_, k) => minCost.slice(k).reduce((a, b) => a + b, 0));
+
+  function walk(k: number, cost: number, rank: number) {
+    if (rank >= bestRank || cost + (minRest[k] ?? 0) > dailyLimit + 1e-9) return;
+    if (k === filled.length) {
+      bestRank = rank;
+      best = [...choice];
+      return;
+    }
+    filled[k].c.forEach((m, idx) => {
+      choice[k] = idx;
+      walk(k + 1, cost + m.cost, rank + idx);
+    });
+  }
+  walk(0, 0, 0);
+
+  if (!best) return null;
+  const picks = candidates.map(() => -1);
+  filled.forEach(({ i }, k) => (picks[i] = best![k]));
+  return picks;
+}
+
+function byCost(meals: PlannedMeal[]): PlannedMeal[] {
+  return meals.map((m, rank) => ({ m, rank })).sort((a, b) => a.m.cost - b.m.cost || a.rank - b.rank).map((x) => x.m);
+}
+
+/** Options per slot (pick first, then swaps) for the chosen budget mode. */
+function applyBudget(
+  candidates: PlannedMeal[][],
+  budget: BudgetSetting
+): { options: PlannedMeal[][]; summary: BudgetSummary } {
+  const cheapestDay = candidates.reduce((s, c) => s + (c.length ? Math.min(...c.map((m) => m.cost)) : 0), 0);
+  const summary: BudgetSummary = {
+    mode: budget.mode,
+    weeklyLimit: budget.mode === 'weekly' ? budget.weeklyLimit : undefined,
+    cheapestPerWeek: round2(cheapestDay * 7),
+    overBudget: false,
+  };
+  const cheapestFirst = () => candidates.map((c) => byCost(c).slice(0, OPTIONS_PER_SLOT));
+
+  if (budget.mode === 'cheapest') return { options: cheapestFirst(), summary };
+  if (budget.mode !== 'weekly' || !budget.weeklyLimit) {
+    return { options: candidates.map((c) => c.slice(0, OPTIONS_PER_SLOT)), summary };
+  }
+
+  const dailyLimit = budget.weeklyLimit / 7;
+  const picks = bestWithinBudget(candidates, dailyLimit);
+  if (!picks) return { options: cheapestFirst(), summary: { ...summary, overBudget: true } };
+
+  const dayCost = picks.reduce((s, p, i) => s + (p >= 0 ? candidates[i][p].cost : 0), 0);
+  const slack = dailyLimit - dayCost;
+  // Swaps: other recipes (best-ranked first) that keep the day within budget on their own.
+  const options = candidates.map((c, i) => {
+    if (picks[i] < 0) return [];
+    const pick = c[picks[i]];
+    const swaps = c.filter((m, idx) => idx !== picks[i] && m.cost <= pick.cost + slack + 1e-9);
+    return [pick, ...swaps].slice(0, OPTIONS_PER_SLOT);
+  });
+  return { options, summary };
+}
+
 // ─── Public entry point ─────────────────────────────────────────────────────
 
 export function buildMealPlan(opts: {
@@ -257,11 +345,12 @@ export function buildMealPlan(opts: {
   seed?: number;
   coachTips?: string[];
   restrictions?: RestrictionId[];
+  budget?: BudgetSetting;
 }): MealPlan {
-  const { goal, coachId, targets, seed = 0, coachTips = [], restrictions = [] } = opts;
+  const { goal, coachId, targets, seed = 0, coachTips = [], restrictions = [], budget = { mode: 'none' } } = opts;
   const calories = targets.showNumbers ? targets.calories : undefined;
 
-  const slots: MealSlotPlan[] = SLOTS.map(({ slot, label, timing, share }, slotIndex) => {
+  const draft = SLOTS.map(({ slot, label, timing, share }, slotIndex) => {
     const ranked = rankRecipes(slot, goal, coachId, restrictions);
     // Regenerating the plan rotates through the ranked list so each variation
     // leads with a different recipe while keeping the best fits near the top.
@@ -273,9 +362,17 @@ export function buildMealPlan(opts: {
       label,
       timing,
       targetKcal,
-      options: rotated.slice(0, OPTIONS_PER_SLOT).map((r) => buildMeal(r, servingsFor(r, targetKcal), coachId)),
+      candidates: rotated.map((r) => buildMeal(r, servingsFor(r, targetKcal), coachId)),
     };
   });
+  const { options, summary: budgetSummary } = applyBudget(draft.map((d) => d.candidates), budget);
+  const slots: MealSlotPlan[] = draft.map(({ slot, label, timing, targetKcal }, i) => ({
+    slot,
+    label,
+    timing,
+    targetKcal,
+    options: options[i],
+  }));
 
   const picks = slots.flatMap((s) => (s.options[0] ? [s.options[0]] : []));
   const day = dayTotals(picks);
@@ -290,6 +387,15 @@ export function buildMealPlan(opts: {
       tips.push(`This menu lands ~${gap}g short on protein. Add a scoop of whey ($${round2(priceFor('whey', 30)).toFixed(2)}, 24g) or an extra 100g chicken breast.`);
     }
   }
+  if (budgetSummary.overBudget && budgetSummary.weeklyLimit) {
+    tips.push(
+      `Even the cheapest menu that hits your calories runs about $${budgetSummary.cheapestPerWeek.toFixed(2)}/week, ` +
+        `$${(budgetSummary.cheapestPerWeek - budgetSummary.weeklyLimit).toFixed(2)} over your $${budgetSummary.weeklyLimit.toFixed(2)} budget. ` +
+        'This plan uses the cheapest recipes; buying rice, oats, beans and chicken in bulk closes the gap fastest.'
+    );
+  } else if (budget.mode === 'cheapest') {
+    tips.push('Cheapest mode: buy store brands and the largest bags of rice, oats and beans to push costs lower still.');
+  }
   tips.push('Batch-cook the meal-prep recipes on Sunday and Wednesday: cook rice, proteins and chili in bulk, portion into containers.');
   tips.push('Buy frozen fish, shrimp, berries and vegetables — same nutrition, lower price, no waste.');
   for (const id of restrictions) {
@@ -301,6 +407,7 @@ export function buildMealPlan(opts: {
   return {
     showNumbers: targets.showNumbers,
     restrictions,
+    budget: budgetSummary,
     slots,
     day,
     avgCostPerMeal: round2(day.cost / Math.max(1, picks.length)),

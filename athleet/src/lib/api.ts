@@ -7,6 +7,7 @@ import { adaptationsFor, generatePlan as buildCoachPlan, recommendedDays } from 
 import { buildMealPlan, type MealPlan } from '@/lib/meal-plan';
 import { computeTargets } from '@/lib/nutrition';
 import { getDietaryRestrictions } from '@/lib/dietary-store';
+import { effectiveBudget, getBudget, type BudgetSetting } from '@/lib/budget-store';
 import type { RestrictionId } from '@/data/dietary';
 
 
@@ -160,7 +161,8 @@ export function withMealPlan(
   plan: GeneratePlanResponse,
   req: GeneratePlanRequest,
   seed: number,
-  restrictions: RestrictionId[] = getDietaryRestrictions()
+  restrictions: RestrictionId[] = getDietaryRestrictions(),
+  budget: BudgetSetting = getBudget()
 ): GeneratePlanResponse {
   const profile = profileFromRequest(req);
   const targets = plan.nutrition.targets ?? computeTargets(profile);
@@ -171,6 +173,7 @@ export function withMealPlan(
     seed,
     coachTips: PROGRAMS[req.coachId]?.nutritionTips ?? plan.nutrition.tips,
     restrictions,
+    budget: effectiveBudget(budget),
   });
   return { ...plan, nutrition: { ...plan.nutrition, targets, mealPlan } };
 }
