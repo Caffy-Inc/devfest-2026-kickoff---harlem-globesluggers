@@ -11,6 +11,7 @@ import { sendChat } from '@/lib/api';
 import { getProfile } from '@/lib/profile-store';
 import { useSelectedPlan } from '@/lib/selected-plan';
 import type { ChatMessage, Coach } from '@/lib/types';
+import { colors } from '@/lib/theme';
 
 export function CoachTraining({ coach, parameters, newPlan = false, initialDay, voiceEnabled = false }: {
   coach: Coach; parameters: PlanParams; newPlan?: boolean; initialDay?: number; voiceEnabled?: boolean;
@@ -71,7 +72,7 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
     finally { if (token === request.current) setBusy(false); }
   }
   return <SafeAreaView style={styles.screen} edges={['bottom']}>
-    <Stack.Screen options={{ headerShown: true, title: `${coach.name.split(' ')[0]} · Train together`, headerStyle: { backgroundColor: '#14130f' }, headerTintColor: '#ffda62', headerBackTitle: 'Coaches' }} />
+    <Stack.Screen options={{ headerShown: true, title: `${coach.name.split(' ')[0]} · Train together`, headerStyle: { backgroundColor: colors.bg }, headerTintColor: colors.accent, headerBackTitle: 'Coaches' }} />
     <KeyboardAvoidingView style={styles.shell} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
       <AnimatedCoach key={workout ? demo.name : 'plan'} coach={coach} compact exercise={demo.name ?? undefined} paused={!playing || demo.resting} motion={workout && !complete && demo.name ? 'exercise' : speech.speaking ? 'talking' : busy ? 'thinking' : complete && workout ? 'celebrate' : 'idle'} speechAnimation={speech.animation} />
       {workout && !complete && demo.name && <View style={styles.demoControls}>
@@ -89,7 +90,7 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
           {workout && <Pressable accessibilityRole="button" onPress={showPlan}><Text style={styles.link}>Your plan</Text></Pressable>}
         </View>
         {!!speech.error && <Text style={styles.message}>{speech.error}</Text>}
-        {asking && <View style={styles.row}><TextInput accessibilityLabel="Question for your coach" style={styles.input} placeholder="Ask about this exercise…" placeholderTextColor="#a69a77" value={input} onChangeText={setInput} onSubmitEditing={ask} /><Pressable disabled={busy || !input.trim()} accessibilityRole="button" onPress={ask}><Text style={styles.link}>Send</Text></Pressable></View>}
+        {asking && <View style={styles.row}><TextInput accessibilityLabel="Question for your coach" style={styles.input} placeholder="Ask about this exercise…" placeholderTextColor={colors.textSubtle} value={input} onChangeText={setInput} onSubmitEditing={ask} /><Pressable disabled={busy || !input.trim()} accessibilityRole="button" onPress={ask}><Text style={styles.link}>Send</Text></Pressable></View>}
       </View>
       {!workout && day !== null && !complete && <Pressable accessibilityRole="button" style={styles.resume} onPress={() => setWorkout(true)}><Text style={styles.link}>Resume workout with {coach.name.split(' ')[0]} →</Text></Pressable>}
       <View style={[styles.panel, workout && styles.hidden]}>
@@ -101,13 +102,13 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
 }
 const styles = StyleSheet.create({
   demoControls: { paddingHorizontal: 18, alignItems: 'center', gap: 6 },
-  demoCaption: { color: '#b5ad94', fontSize: 12, textAlign: 'center' },
-  demoButton: { backgroundColor: '#ffda62', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, minHeight: 44, justifyContent: 'center' },
-  demoButtonText: { color: '#14130f', fontWeight: '800', fontSize: 13 },
-  screen: { flex: 1, backgroundColor: '#14130f' }, shell: { flex: 1, width: '100%', maxWidth: 680, alignSelf: 'center' },
+  demoCaption: { color: colors.textMuted, fontSize: 12, textAlign: 'center' },
+  demoButton: { backgroundColor: colors.accent, borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, minHeight: 44, justifyContent: 'center' },
+  demoButtonText: { color: colors.bg, fontWeight: '800', fontSize: 13 },
+  screen: { flex: 1, backgroundColor: colors.bg }, shell: { flex: 1, width: '100%', maxWidth: 680, alignSelf: 'center' },
   panel: { flex: 1, minHeight: 0 }, hidden: { display: 'none' }, avatar: { alignItems: 'center', padding: 12 },
-  coachBar: { paddingHorizontal: 18, paddingTop: 10, borderBottomWidth: 1, borderBottomColor: '#393222' },
-  message: { color: '#eee8d7', fontSize: 14, lineHeight: 20 }, row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 18 },
-  link: { color: '#ffda62', fontWeight: '700', fontSize: 12, paddingVertical: 12 }, input: { flex: 1, minWidth: 130, color: '#fffbed', backgroundColor: '#29251b', padding: 12, borderRadius: 8, marginBottom: 8 },
-  resume: { paddingHorizontal: 20, backgroundColor: '#302911' },
+  coachBar: { paddingHorizontal: 18, paddingTop: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
+  message: { color: colors.text, fontSize: 14, lineHeight: 20 }, row: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 18 },
+  link: { color: colors.accent, fontWeight: '700', fontSize: 12, paddingVertical: 12 }, input: { flex: 1, minWidth: 130, color: colors.text, backgroundColor: colors.surface, padding: 12, borderRadius: 8, marginBottom: 8 },
+  resume: { paddingHorizontal: 20, backgroundColor: colors.accentSoft },
 });

@@ -8,6 +8,7 @@ import { OnboardingMascot } from '@/components/onboarding-mascot';
 import { recommendedDays } from '@/lib/plan';
 import { setProfile } from '@/lib/profile-store';
 import type { Goal, Sex } from '@/lib/types';
+import { colors } from '@/lib/theme';
 
 type Step = 'age' | 'gender' | 'height' | 'weight' | 'goal';
 type Units = 'imperial' | 'metric';
@@ -154,7 +155,7 @@ export default function QuestionnaireScreen() {
                 value={age}
                 onChangeText={(v) => { setAge(v); setError(''); }}
                 placeholder="Enter your age"
-                placeholderTextColor="#6b6b72"
+                placeholderTextColor={colors.textFaint}
                 keyboardAppearance="dark"
                 keyboardType="number-pad"
                 maxLength={3}
@@ -188,7 +189,7 @@ export default function QuestionnaireScreen() {
                     value={feet}
                     onChangeText={(v) => { setFeet(v); setError(''); }}
                     placeholder="ft"
-                    placeholderTextColor="#6b6b72"
+                    placeholderTextColor={colors.textFaint}
                     keyboardAppearance="dark"
                     keyboardType="number-pad"
                     maxLength={1}
@@ -201,7 +202,7 @@ export default function QuestionnaireScreen() {
                     value={inches}
                     onChangeText={(v) => { setInches(v); setError(''); }}
                     placeholder="in"
-                    placeholderTextColor="#6b6b72"
+                    placeholderTextColor={colors.textFaint}
                     keyboardAppearance="dark"
                     keyboardType="number-pad"
                     maxLength={2}
@@ -217,7 +218,7 @@ export default function QuestionnaireScreen() {
                   value={cm}
                   onChangeText={(v) => { setCm(v); setError(''); }}
                   placeholder="cm"
-                  placeholderTextColor="#6b6b72"
+                  placeholderTextColor={colors.textFaint}
                   keyboardAppearance="dark"
                   keyboardType="number-pad"
                   maxLength={3}
@@ -241,7 +242,7 @@ export default function QuestionnaireScreen() {
                 value={weight}
                 onChangeText={(v) => { setWeight(v); setError(''); }}
                 placeholder={units === 'imperial' ? 'lbs' : 'kg'}
-                placeholderTextColor="#6b6b72"
+                placeholderTextColor={colors.textFaint}
                 keyboardAppearance="dark"
                 keyboardType="decimal-pad"
                 maxLength={5}
@@ -317,56 +318,56 @@ function ErrorText({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#0d0d0f' },
+  screen: { flex: 1, backgroundColor: colors.bg },
   content: { flexGrow: 1, width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 48 },
-  header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: '#2a2a2e', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   logo: { width: 108, height: 34 },
-  backText: { color: '#a0a0a6', fontSize: 15 },
-  progressTrack: { height: 4, backgroundColor: '#2a2a2e', borderRadius: 2, marginTop: 16 },
-  progressFill: { height: 4, backgroundColor: '#f5f5f5', borderRadius: 2 },
+  backText: { color: colors.textMuted, fontSize: 15 },
+  progressTrack: { height: 4, backgroundColor: colors.border, borderRadius: 2, marginTop: 16 },
+  progressFill: { height: 4, backgroundColor: colors.accent, borderRadius: 2 },
   numericContent: { paddingBottom: 72 },
   editingIntro: { paddingVertical: 12 },
   intro: { flexGrow: 1, justifyContent: 'center', paddingVertical: 32 },
   welcome: { width: '100%', maxWidth: 400, alignSelf: 'center' },
-  welcomeBubble: { alignSelf: 'center', backgroundColor: '#fff3d5', borderRadius: 20, paddingHorizontal: 20, paddingVertical: 12, marginBottom: -8, zIndex: 1 },
-  welcomeBubbleTail: { position: 'absolute', left: '39%', bottom: -6, width: 16, height: 16, backgroundColor: '#fff3d5', transform: [{ rotate: '45deg' }] },
-  welcomeTitle: { color: '#24345e', fontSize: 24, fontWeight: '500', textAlign: 'center' },
-  question: { color: '#f5f5f5', fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
-  subtle: { color: '#8a8a90', fontSize: 14, marginBottom: 8, textAlign: 'center' },
+  welcomeBubble: { alignSelf: 'center', backgroundColor: colors.bubble, borderRadius: 20, paddingHorizontal: 20, paddingVertical: 12, marginBottom: -8, zIndex: 1 },
+  welcomeBubbleTail: { position: 'absolute', left: '39%', bottom: -6, width: 16, height: 16, backgroundColor: colors.bubble, transform: [{ rotate: '45deg' }] },
+  welcomeTitle: { color: colors.bubbleText, fontSize: 24, fontWeight: '500', textAlign: 'center' },
+  question: { color: colors.text, fontSize: 24, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  subtle: { color: colors.textSubtle, fontSize: 14, marginBottom: 8, textAlign: 'center' },
   row: { flexDirection: 'row', gap: 12 },
   flex: { flex: 1, minWidth: 0 },
-  input: { height: 58, borderWidth: 1, borderColor: '#3a3a40', borderRadius: 6, paddingHorizontal: 16, backgroundColor: '#1a1a1d', fontSize: 17, color: '#f5f5f5', textAlign: 'center', marginTop: 16 },
-  error: { color: '#d0d0d5', fontSize: 13, marginTop: 8, textAlign: 'center' },
-  button: { backgroundColor: '#f5f5f5', borderRadius: 6, padding: 18, alignItems: 'center', marginTop: 16 },
-  buttonText: { color: '#0d0d0f', fontWeight: '700', fontSize: 16 },
+  input: { height: 58, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: 6, paddingHorizontal: 16, backgroundColor: colors.surface, fontSize: 17, color: colors.text, textAlign: 'center', marginTop: 16 },
+  error: { color: colors.textSecondary, fontSize: 13, marginTop: 8, textAlign: 'center' },
+  button: { backgroundColor: colors.accent, borderRadius: 6, padding: 18, alignItems: 'center', marginTop: 16 },
+  buttonText: { color: colors.bg, fontWeight: '700', fontSize: 16 },
   choices: { gap: 10, marginTop: 16 },
-  choice: { backgroundColor: '#1a1a1d', borderWidth: 1, borderColor: '#2a2a2e', borderRadius: 6, padding: 16 },
-  choiceSelected: { backgroundColor: '#f5f5f5', borderColor: '#f5f5f5' },
-  choiceLabel: { fontSize: 17, fontWeight: '700', color: '#f5f5f5' },
-  choiceLabelSelected: { color: '#0d0d0f' },
-  choiceHint: { fontSize: 13, color: '#8a8a90', marginTop: 2 },
-  choiceHintSelected: { color: '#3a3a40' },
-  toggle: { flexDirection: 'row', backgroundColor: '#1a1a1d', borderWidth: 1, borderColor: '#2a2a2e', borderRadius: 6, padding: 3, alignSelf: 'center', marginTop: 8 },
+  choice: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 6, padding: 16 },
+  choiceSelected: { backgroundColor: colors.accent, borderColor: colors.accent },
+  choiceLabel: { fontSize: 17, fontWeight: '700', color: colors.text },
+  choiceLabelSelected: { color: colors.bg },
+  choiceHint: { fontSize: 13, color: colors.textSubtle, marginTop: 2 },
+  choiceHintSelected: { color: colors.borderStrong },
+  toggle: { flexDirection: 'row', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 6, padding: 3, alignSelf: 'center', marginTop: 8 },
   toggleBtn: { paddingVertical: 6, paddingHorizontal: 14, borderRadius: 4 },
-  toggleBtnOn: { backgroundColor: '#f5f5f5' },
-  toggleText: { fontSize: 13, color: '#8a8a90' },
-  toggleTextOn: { color: '#0d0d0f', fontWeight: '700' },
+  toggleBtnOn: { backgroundColor: colors.accent },
+  toggleText: { fontSize: 13, color: colors.textSubtle },
+  toggleTextOn: { color: colors.bg, fontWeight: '700' },
   list: { paddingTop: 32 },
-  resultsLabel: { fontSize: 13, fontWeight: '700', color: '#8a8a90', textTransform: 'uppercase', letterSpacing: 1 },
+  resultsLabel: { fontSize: 13, fontWeight: '700', color: colors.textSubtle, textTransform: 'uppercase', letterSpacing: 1 },
   spaced: { marginTop: 32 },
   section: { marginTop: 12 },
-  card: { backgroundColor: '#1a1a1d', borderWidth: 1, borderColor: '#2a2a2e', borderRadius: 6, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 16 },
-  cardHighlight: { borderColor: '#f5f5f5', borderWidth: 2, padding: 18 },
+  card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 6, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 16 },
+  cardHighlight: { borderColor: colors.accent, borderWidth: 2, padding: 18 },
   cardDim: { opacity: 0.5 },
   cardText: { flex: 1, minWidth: 0, gap: 2 },
-  chevron: { color: '#6b6b72', fontSize: 28, fontWeight: '300' },
+  chevron: { color: colors.textFaint, fontSize: 28, fontWeight: '300' },
   pressed: { opacity: 0.7 },
-  subtleLeft: { color: '#8a8a90', fontSize: 13, marginTop: 4 },
-  category: { fontSize: 12, fontWeight: '700', color: '#8a8a90', textTransform: 'uppercase' },
-  name: { fontSize: 18, fontWeight: '700', color: '#f5f5f5' },
-  tagline: { fontSize: 14, color: '#a0a0a6' },
-  tags: { fontSize: 12, color: '#8a8a90', marginTop: 2 },
-  summary: { fontSize: 13, color: '#8a8a90', marginTop: 32 },
+  subtleLeft: { color: colors.textSubtle, fontSize: 13, marginTop: 4 },
+  category: { fontSize: 12, fontWeight: '700', color: colors.textSubtle, textTransform: 'uppercase' },
+  name: { fontSize: 18, fontWeight: '700', color: colors.text },
+  tagline: { fontSize: 14, color: colors.textMuted },
+  tags: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
+  summary: { fontSize: 13, color: colors.textSubtle, marginTop: 32 },
   editAge: { alignSelf: 'flex-start', marginTop: 8, paddingVertical: 8 },
-  editAgeText: { color: '#a0a0a6', fontSize: 14, textDecorationLine: 'underline' },
+  editAgeText: { color: colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
 });

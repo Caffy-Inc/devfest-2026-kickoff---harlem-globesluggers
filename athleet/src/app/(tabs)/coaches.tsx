@@ -10,6 +10,7 @@ import { StreakBadge } from '@/components/streak-badge';
 import { COACHES } from '@/data/coaches';
 import { rankCoaches } from '@/lib/match';
 import { getProfile } from '@/lib/profile-store';
+import { colors } from '@/lib/theme';
 
 // The chatbot section: every coach, best matches first.
 export default function CoachesScreen() {
@@ -73,15 +74,15 @@ export default function CoachesScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#0d0d0f' },
+  screen: { flex: 1, backgroundColor: colors.bg },
   content: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 24, paddingBottom: 32 },
-  header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: '#2a2a2e', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
+  header: { paddingVertical: 24, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
   logo: { width: 108, height: 34 },
   headerLinks: { flexDirection: 'row', gap: 16 },
-  link: { color: '#a0a0a6', fontSize: 14, textDecorationLine: 'underline' },
+  link: { color: colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
   spacer: { height: 24 },
-  label: { fontSize: 13, fontWeight: '700', color: '#8a8a90', textTransform: 'uppercase', letterSpacing: 1 },
-  subtle: { color: '#8a8a90', fontSize: 13, marginTop: 4 },
+  label: { fontSize: 13, fontWeight: '700', color: colors.textSubtle, textTransform: 'uppercase', letterSpacing: 1 },
+  subtle: { color: colors.textSubtle, fontSize: 13, marginTop: 4 },
   spaced: { marginTop: 32 },
-  summary: { fontSize: 13, color: '#8a8a90', marginTop: 32 },
+  summary: { fontSize: 13, color: colors.textSubtle, marginTop: 32 },
 });

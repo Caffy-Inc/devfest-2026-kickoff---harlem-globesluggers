@@ -27,6 +27,7 @@ import {
   type CloneStatus,
 } from '@/lib/voice-clone';
 import { shoutSignature } from '@/lib/voice';
+import { colors } from '@/lib/theme';
 
 // ─── Voice Settings Screen ──────────────────────────────────────────────────
 
@@ -79,7 +80,7 @@ export default function VoiceSettingsScreen() {
           >
             {refreshing ? (
               <View style={styles.busyRow}>
-                <ActivityIndicator size="small" color="#f5f5f5" />
+                <ActivityIndicator size="small" color={colors.text} />
                 <Text style={styles.refreshText}>Checking voices folder…</Text>
               </View>
             ) : (
@@ -260,7 +261,7 @@ function CoachVoiceRow({
           >
             {busy ? (
               <View style={styles.busyRow}>
-                <ActivityIndicator size="small" color="#f5f5f5" />
+                <ActivityIndicator size="small" color={colors.text} />
                 <Text style={styles.cloneBtnText}>Building voice…</Text>
               </View>
             ) : (
@@ -284,7 +285,7 @@ function CoachVoiceRow({
 // ─── Styles ─────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#0d0d0f' },
+  screen: { flex: 1, backgroundColor: colors.bg },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -292,40 +293,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2e',
+    borderBottomColor: colors.border,
   },
-  back: { color: '#a0a0ff', fontSize: 16, fontWeight: '600' },
-  title: { color: '#f5f5f5', fontSize: 18, fontWeight: '700' },
+  back: { color: colors.accent, fontSize: 16, fontWeight: '600' },
+  title: { color: colors.text, fontSize: 18, fontWeight: '700' },
   content: { padding: 16, gap: 16 },
 
   // Info card
   infoCard: {
-    backgroundColor: '#1a1a1d',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#2a2a2e',
+    borderColor: colors.border,
   },
-  infoTitle: { color: '#f5f5f5', fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  infoText: { color: '#b0b0b8', fontSize: 14, lineHeight: 20 },
+  infoTitle: { color: colors.text, fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  infoText: { color: colors.textMuted, fontSize: 14, lineHeight: 20 },
   warningBox: {
     marginTop: 12,
-    backgroundColor: '#2a2200',
+    backgroundColor: colors.warningBg,
     borderRadius: 8,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#554400',
+    borderColor: colors.warningBorder,
   },
-  warningText: { color: '#ffcc44', fontSize: 13, lineHeight: 18 },
+  warningText: { color: colors.warning, fontSize: 13, lineHeight: 18 },
   mono: { fontFamily: 'monospace', fontSize: 12 },
 
   // Coach row
   coachRow: {
-    backgroundColor: '#1a1a1d',
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#2a2a2e',
+    borderColor: colors.border,
     gap: 12,
   },
   coachHeader: {
@@ -334,97 +335,97 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   coachInfo: { flex: 1, gap: 2 },
-  coachName: { color: '#f5f5f5', fontSize: 16, fontWeight: '700' },
-  voiceLabel: { color: '#8a8a90', fontSize: 12 },
+  coachName: { color: colors.text, fontSize: 16, fontWeight: '700' },
+  voiceLabel: { color: colors.textSubtle, fontSize: 12 },
 
   previewBtn: {
-    backgroundColor: '#26262b',
+    backgroundColor: colors.surfaceRaised,
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
-  previewText: { color: '#b0b0ff', fontSize: 13, fontWeight: '600' },
+  previewText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
 
   // File picker & consent
   pickBtn: {
     borderRadius: 8,
-    backgroundColor: '#111113',
+    backgroundColor: colors.surfaceSunken,
     borderWidth: 1,
-    borderColor: '#3a3a40',
+    borderColor: colors.borderStrong,
     borderStyle: 'dashed',
     paddingVertical: 12,
     paddingHorizontal: 12,
   },
-  pickText: { color: '#d0d0d8', fontSize: 14 },
+  pickText: { color: colors.textSecondary, fontSize: 14 },
   consentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   checkbox: {
     width: 20,
     height: 20,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: '#6b6b72',
+    borderColor: colors.textFaint,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 1,
   },
-  checkboxOn: { backgroundColor: '#6c3aed', borderColor: '#6c3aed' },
-  checkmark: { color: '#fff', fontSize: 13, fontWeight: '800' },
-  consentText: { flex: 1, color: '#b0b0b8', fontSize: 13, lineHeight: 18 },
-  sampleNames: { flex: 1, color: '#8a8a90', fontSize: 12 },
+  checkboxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  checkmark: { color: colors.onAccent, fontSize: 13, fontWeight: '800' },
+  consentText: { flex: 1, color: colors.textMuted, fontSize: 13, lineHeight: 18 },
+  sampleNames: { flex: 1, color: colors.textSubtle, fontSize: 12 },
   refreshBtn: {
     marginTop: 12,
     alignSelf: 'flex-start',
-    backgroundColor: '#26262b',
+    backgroundColor: colors.surfaceRaised,
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
-  refreshText: { color: '#b0b0ff', fontSize: 13, fontWeight: '600' },
-  problemText: { color: '#ffcc44', fontSize: 13, lineHeight: 18, marginTop: 8 },
+  refreshText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
+  problemText: { color: colors.warning, fontSize: 13, lineHeight: 18, marginTop: 8 },
 
   // Action buttons
   actionRow: { flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' },
   cloneBtn: {
     flex: 1,
-    backgroundColor: '#6c3aed',
+    backgroundColor: colors.accent,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 14,
     alignItems: 'center',
   },
-  cloneBtnText: { color: '#f5f5f5', fontSize: 14, fontWeight: '700' },
+  cloneBtnText: { color: colors.onAccent, fontSize: 14, fontWeight: '700' },
   btnDisabled: { opacity: 0.5 },
   busyRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
 
   clonedBadge: {
-    backgroundColor: '#0a3d0a',
+    backgroundColor: colors.successBg,
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: '#1a6b1a',
+    borderColor: colors.successBorder,
   },
-  clonedBadgeText: { color: '#44dd44', fontSize: 13, fontWeight: '600' },
+  clonedBadgeText: { color: colors.success, fontSize: 13, fontWeight: '600' },
 
   recloneBtn: {
-    backgroundColor: '#2a2a2e',
+    backgroundColor: colors.border,
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 10,
   },
-  recloneText: { color: '#b0b0ff', fontSize: 13, fontWeight: '600' },
+  recloneText: { color: colors.accent, fontSize: 13, fontWeight: '600' },
 
   removeBtn: {
-    backgroundColor: '#2a1515',
+    backgroundColor: colors.dangerBg,
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: '#5a2020',
+    borderColor: colors.dangerBorder,
   },
-  removeText: { color: '#ff6666', fontSize: 13, fontWeight: '600' },
+  removeText: { color: colors.danger, fontSize: 13, fontWeight: '600' },
 
   // Status
-  errorText: { color: '#ff6666', fontSize: 13 },
-  successText: { color: '#44dd44', fontSize: 13 },
+  errorText: { color: colors.danger, fontSize: 13 },
+  successText: { color: colors.success, fontSize: 13 },
 });

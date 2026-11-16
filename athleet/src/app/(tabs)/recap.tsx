@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { HomeLogo } from '@/components/home-logo';
 import { WeeklyRecapView } from '@/components/weekly-recap';
 import { useSelectedPlan } from '@/lib/selected-plan';
+import { colors } from '@/lib/theme';
 
 export default function RecapScreen() {
   const selected = useSelectedPlan();
@@ -41,13 +42,13 @@ export default function RecapScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#0d0d0f' },
+  screen: { flex: 1, backgroundColor: colors.bg },
   scroll: { padding: 16, paddingBottom: 40 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#f5f5f5' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: colors.text },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
-  title: { color: '#f5f5f5', fontSize: 22, fontWeight: '800' },
-  text: { color: '#a0a0a6', fontSize: 15, textAlign: 'center', lineHeight: 22 },
-  btn: { backgroundColor: '#f5f5f5', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 24, marginTop: 8 },
-  btnText: { color: '#0d0d0f', fontWeight: '700', fontSize: 15 },
+  title: { color: colors.text, fontSize: 22, fontWeight: '800' },
+  text: { color: colors.textMuted, fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  btn: { backgroundColor: colors.accent, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 24, marginTop: 8 },
+  btnText: { color: colors.bg, fontWeight: '700', fontSize: 15 },
 });

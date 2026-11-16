@@ -13,6 +13,7 @@ import { sendChat } from '@/lib/api';
 import { getProfile } from '@/lib/profile-store';
 import type { CoachMotion } from '@/lib/lebron-motion';
 import type { ChatMessage, Equipment, Goal } from '@/lib/types';
+import { colors } from '@/lib/theme';
 
 const GOALS: { value: Goal; label: string; icon: string }[] = [
   { value: 'sport_performance', label: 'Move like an athlete', icon: '⚡' },
@@ -101,7 +102,7 @@ function CoachSession({ id, parameters }: { id: string; parameters: PlanParams &
   if (training) return <CoachTraining coach={coach} voiceEnabled={enabled} newPlan={newPlan} initialDay={parameters.view === 'workout' ? Number(parameters.day ?? 0) : undefined} parameters={newPlan ? { coachId: id, goal, daysPerWeek: String(days), sessionMinutes: String(minutes), equipment } : { ...parameters, coachId: id }} />;
   return (
     <SafeAreaView style={styles.screen} edges={['bottom']}>
-      <Stack.Screen options={{ headerShown: true, title: `${first} · Coach session`, headerStyle: { backgroundColor: '#14130f' }, headerTintColor: '#f5f5f5', headerBackTitle: 'Coaches' }} />
+      <Stack.Screen options={{ headerShown: true, title: `${first} · Coach session`, headerStyle: { backgroundColor: colors.bg }, headerTintColor: colors.text, headerBackTitle: 'Coaches' }} />
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
         <View style={styles.shell}>
           <View style={styles.progressRow}><Text style={styles.eyebrow}>BUILD YOUR GAME PLAN</Text><Text style={styles.counter}>{step + 1} / {LABELS.length}</Text></View>
@@ -122,7 +123,7 @@ function CoachSession({ id, parameters }: { id: string; parameters: PlanParams &
                 {step === 5 && <View style={styles.lesson}><Text style={styles.success}>✓ SESSION COMPLETE</Text><Text style={styles.summary}>{goalLabel}</Text><Text style={styles.subtitle}>{days} days / week  ·  {minutes} min / session</Text><Text style={styles.subtitle}>{EQUIPMENT.find(e => e.value === equipment)?.label}</Text><Text style={styles.note}>Your full routine is next. Review it and save it to Your Plan.</Text></View>}
               </View>
               <Pressable accessibilityRole="button" onPress={() => setAsking(!asking)}><Text style={styles.link}>{asking ? '− Close question' : '+ Ask coach a question'}</Text></Pressable>
-              {asking && <View style={styles.inputRow}><TextInput accessibilityLabel="Question for your coach" style={styles.input} value={input} onChangeText={setInput} placeholder="What’s on your mind?" placeholderTextColor="#a49a80" returnKeyType="send" onSubmitEditing={() => void ask()} /><Pressable disabled={busy || !input.trim()} accessibilityRole="button" accessibilityLabel="Send question" onPress={() => void ask()} style={[styles.send, (busy || !input.trim()) && styles.disabled]}><Text style={styles.ctaText}>↑</Text></Pressable></View>}
+              {asking && <View style={styles.inputRow}><TextInput accessibilityLabel="Question for your coach" style={styles.input} value={input} onChangeText={setInput} placeholder="What’s on your mind?" placeholderTextColor={colors.textSubtle} returnKeyType="send" onSubmitEditing={() => void ask()} /><Pressable disabled={busy || !input.trim()} accessibilityRole="button" accessibilityLabel="Send question" onPress={() => void ask()} style={[styles.send, (busy || !input.trim()) && styles.disabled]}><Text style={styles.ctaText}>↑</Text></Pressable></View>}
               {asking && !busy && <View style={styles.options}>{suggestionsFor(id, messages.filter(m => m.role === 'user').map(m => m.content)).map(question => <Pressable key={question} accessibilityRole="button" onPress={() => question === PLAN_PROMPT ? (canContinue && step === 5 ? openPlan() : setAsking(false)) : void ask(question)}><Text style={styles.link}>{question}</Text></Pressable>)}</View>}
               <Text style={styles.disclosure}>{coach.name}-inspired demo character · device voice</Text>
             </View>
@@ -134,25 +135,25 @@ function CoachSession({ id, parameters }: { id: string; parameters: PlanParams &
   );
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#14130f' }, flex: { flex: 1 },
+  screen: { flex: 1, backgroundColor: colors.bg }, flex: { flex: 1 },
   shell: { flex: 1, width: '100%', maxWidth: 680, alignSelf: 'center' },
   progressRow: { paddingHorizontal: 24, paddingTop: 18, flexDirection: 'row', justifyContent: 'space-between' },
-  eyebrow: { color: '#b5ad94', fontSize: 10, fontWeight: '800', letterSpacing: 1.3 }, counter: { color: '#ffd34e', fontSize: 12, fontWeight: '800' },
-  progress: { flexDirection: 'row', gap: 5, marginHorizontal: 24, marginTop: 10, marginBottom: 14 }, segment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: '#373225' }, segmentDone: { backgroundColor: '#ffd34e' },
+  eyebrow: { color: colors.textMuted, fontSize: 10, fontWeight: '800', letterSpacing: 1.3 }, counter: { color: colors.accent, fontSize: 12, fontWeight: '800' },
+  progress: { flexDirection: 'row', gap: 5, marginHorizontal: 24, marginTop: 10, marginBottom: 14 }, segment: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.border }, segmentDone: { backgroundColor: colors.accent },
   scroll: { paddingBottom: 16 }, content: { paddingHorizontal: 24, paddingTop: 20 },
   avatar: { height: 210, alignItems: 'center', justifyContent: 'center', gap: 18 },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  voice: { color: '#ffe394', fontSize: 12, paddingVertical: 10 },
-  title: { color: '#fffbed', fontSize: 27, lineHeight: 33, fontWeight: '800', marginTop: 6, marginBottom: 18 },
-  bubble: { borderLeftWidth: 3, borderLeftColor: '#f0bf36', paddingLeft: 16, marginBottom: 20 },
-  prompt: { color: '#e4dfcf', fontSize: 16, lineHeight: 24 }, replay: { color: '#cabc91', fontSize: 12, paddingTop: 10, paddingBottom: 4 },
-  options: { gap: 9 }, option: { flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderBottomWidth: 3, borderColor: '#413b2b', borderRadius: 14, padding: 15, backgroundColor: '#211f18', minHeight: 58 },
-  selected: { borderColor: '#f5c842', backgroundColor: '#3d3315' }, optionIcon: { fontSize: 21, width: 28, textAlign: 'center' }, optionText: { color: '#eee8d7', fontSize: 15, fontWeight: '600', flex: 1 }, selectedText: { color: '#ffe18a', fontWeight: '700' }, check: { color: '#8d8262', fontSize: 20 },
-  lesson: { paddingVertical: 8, gap: 14 }, lessonTitle: { color: '#ffdf7c', fontWeight: '800', fontSize: 13 }, subtitle: { color: '#d1c8ae', fontSize: 15, lineHeight: 23 }, note: { color: '#aaa086', fontSize: 12, lineHeight: 18 }, demo: { borderWidth: 1, borderColor: '#c9a23b', borderRadius: 12, padding: 16, alignItems: 'center' },
-  success: { color: '#bce780', fontSize: 12, fontWeight: '800' }, summary: { color: '#fffbed', fontSize: 23, fontWeight: '700', textTransform: 'capitalize' },
-  link: { color: '#e0c673', fontSize: 13, paddingVertical: 20, textAlign: 'center' },
-  inputRow: { flexDirection: 'row', gap: 8 }, input: { flex: 1, minWidth: 0, backgroundColor: '#2d291e', borderRadius: 12, padding: 14, color: '#fff', fontSize: 15 }, send: { backgroundColor: '#ffd34e', borderRadius: 12, width: 48, justifyContent: 'center', alignItems: 'center' },
-  disclosure: { color: '#a69a77', fontSize: 10, textAlign: 'center', marginTop: 8 }, error: { color: '#ffc88c', fontSize: 12, marginBottom: 12 },
-  footer: { flexDirection: 'row', padding: 18, gap: 12, borderTopWidth: 1, borderTopColor: '#393222', backgroundColor: '#14130f' },
-  back: { justifyContent: 'center', padding: 12 }, backText: { color: '#d2c5a0', fontWeight: '700' }, cta: { flex: 1, backgroundColor: '#ffd34e', borderRadius: 14, borderBottomWidth: 4, borderBottomColor: '#b48818', minHeight: 55, alignItems: 'center', justifyContent: 'center' }, ctaText: { color: '#302300', fontSize: 14, fontWeight: '900' }, disabled: { opacity: .35 },
+  voice: { color: colors.accent, fontSize: 12, paddingVertical: 10 },
+  title: { color: colors.text, fontSize: 27, lineHeight: 33, fontWeight: '800', marginTop: 6, marginBottom: 18 },
+  bubble: { borderLeftWidth: 3, borderLeftColor: colors.accent, paddingLeft: 16, marginBottom: 20 },
+  prompt: { color: colors.text, fontSize: 16, lineHeight: 24 }, replay: { color: colors.textMuted, fontSize: 12, paddingTop: 10, paddingBottom: 4 },
+  options: { gap: 9 }, option: { flexDirection: 'row', alignItems: 'center', gap: 14, borderWidth: 1, borderBottomWidth: 3, borderColor: colors.border, borderRadius: 14, padding: 15, backgroundColor: colors.surface, minHeight: 58 },
+  selected: { borderColor: colors.accent, backgroundColor: colors.accentSoft }, optionIcon: { fontSize: 21, width: 28, textAlign: 'center' }, optionText: { color: colors.text, fontSize: 15, fontWeight: '600', flex: 1 }, selectedText: { color: colors.accent, fontWeight: '700' }, check: { color: colors.textSubtle, fontSize: 20 },
+  lesson: { paddingVertical: 8, gap: 14 }, lessonTitle: { color: colors.accent, fontWeight: '800', fontSize: 13 }, subtitle: { color: colors.textSecondary, fontSize: 15, lineHeight: 23 }, note: { color: colors.textSubtle, fontSize: 12, lineHeight: 18 }, demo: { borderWidth: 1, borderColor: colors.accentBorder, borderRadius: 12, padding: 16, alignItems: 'center' },
+  success: { color: colors.successText, fontSize: 12, fontWeight: '800' }, summary: { color: colors.text, fontSize: 23, fontWeight: '700', textTransform: 'capitalize' },
+  link: { color: colors.accent, fontSize: 13, paddingVertical: 20, textAlign: 'center' },
+  inputRow: { flexDirection: 'row', gap: 8 }, input: { flex: 1, minWidth: 0, backgroundColor: colors.surface, borderRadius: 12, padding: 14, color: colors.text, fontSize: 15 }, send: { backgroundColor: colors.accent, borderRadius: 12, width: 48, justifyContent: 'center', alignItems: 'center' },
+  disclosure: { color: colors.textSubtle, fontSize: 10, textAlign: 'center', marginTop: 8 }, error: { color: colors.danger, fontSize: 12, marginBottom: 12 },
+  footer: { flexDirection: 'row', padding: 18, gap: 12, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.bg },
+  back: { justifyContent: 'center', padding: 12 }, backText: { color: colors.textSecondary, fontWeight: '700' }, cta: { flex: 1, backgroundColor: colors.accent, borderRadius: 14, borderBottomWidth: 4, borderBottomColor: colors.accentDark, minHeight: 55, alignItems: 'center', justifyContent: 'center' }, ctaText: { color: colors.onAccent, fontSize: 14, fontWeight: '900' }, disabled: { opacity: .35 },
 });

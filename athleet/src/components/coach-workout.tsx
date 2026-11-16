@@ -7,6 +7,7 @@ import { StreakBadge } from '@/components/streak-badge';
 import { hypeLine, signatureFor } from '@/data/hype';
 import { useSelectedPlan } from '@/lib/selected-plan';
 import { restSeconds, saveWorkout, type LoggedSet } from '@/lib/workout-log';
+import { colors } from '@/lib/theme';
 
 type SetEntry = { reps: string; weight: string; done: boolean };
 
@@ -192,7 +193,7 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
                             value={s.reps}
                             onChangeText={(v) => update(i, j, { reps: v.replace(/[^0-9]/g, '') })}
                             placeholder={e.reps.replace(/\s*reps?/i, '')}
-                            placeholderTextColor="#6b6b72"
+                            placeholderTextColor={colors.textFaint}
                             keyboardType="number-pad"
                             keyboardAppearance="dark"
                             accessibilityLabel={`${e.name} set ${j + 1} reps`}
@@ -203,7 +204,7 @@ export function CoachWorkout({ dayIndex, onExit, onCue, onCancelEmpty, onExercis
                             value={s.weight}
                             onChangeText={(v) => update(i, j, { weight: v.replace(/[^0-9.]/g, '') })}
                             placeholder="lb"
-                            placeholderTextColor="#6b6b72"
+                            placeholderTextColor={colors.textFaint}
                             keyboardType="decimal-pad"
                             keyboardAppearance="dark"
                             accessibilityLabel={`${e.name} set ${j + 1} weight`}
@@ -252,45 +253,45 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#14130f' },
+  screen: { flex: 1, backgroundColor: colors.bg },
   flex: { flex: 1, minWidth: 0 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
-  title: { color: '#ffda62', fontSize: 22, fontWeight: '800' },
+  title: { color: colors.accent, fontSize: 22, fontWeight: '800' },
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, paddingVertical: 14 },
-  close: { color: '#c9bea3', fontSize: 22 },
-  dayName: { color: '#ffda62', fontSize: 17, fontWeight: '800' },
-  focus: { color: '#b5ad94', fontSize: 13 },
-  timer: { color: '#ffda62', fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  progressTrack: { height: 4, backgroundColor: '#393222', marginHorizontal: 20, borderRadius: 2 },
-  progressFill: { height: 4, backgroundColor: '#ffda62', borderRadius: 2 },
+  close: { color: colors.textSecondary, fontSize: 22 },
+  dayName: { color: colors.accent, fontSize: 17, fontWeight: '800' },
+  focus: { color: colors.textMuted, fontSize: 13 },
+  timer: { color: colors.accent, fontSize: 18, fontWeight: '700', fontVariant: ['tabular-nums'] },
+  progressTrack: { height: 4, backgroundColor: colors.border, marginHorizontal: 20, borderRadius: 2 },
+  progressFill: { height: 4, backgroundColor: colors.accent, borderRadius: 2 },
   hypeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 16 },
-  hypeBubble: { flex: 1, backgroundColor: '#211f18', borderWidth: 1, borderColor: '#50462b', borderRadius: 14, borderBottomLeftRadius: 4, padding: 12 },
-  hypeName: { color: '#b5ad94', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-  hypeText: { color: '#ffda62', fontSize: 17, fontWeight: '800', marginTop: 2 },
-  restBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, marginTop: 12, backgroundColor: '#1f3a26', borderColor: '#3d7a4e', borderWidth: 1, borderRadius: 10, padding: 12 },
-  restText: { color: '#b8f0c6', fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] },
-  restSkip: { color: '#b8f0c6', fontSize: 14, fontWeight: '600' },
+  hypeBubble: { flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: 14, borderBottomLeftRadius: 4, padding: 12 },
+  hypeName: { color: colors.textMuted, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  hypeText: { color: colors.accent, fontSize: 17, fontWeight: '800', marginTop: 2 },
+  restBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginHorizontal: 20, marginTop: 12, backgroundColor: colors.successBg, borderColor: colors.successBorder, borderWidth: 1, borderRadius: 10, padding: 12 },
+  restText: { color: colors.successText, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  restSkip: { color: colors.successText, fontSize: 14, fontWeight: '600' },
   content: { padding: 20, paddingBottom: 48, gap: 12, width: '100%', maxWidth: 560, alignSelf: 'center' },
-  sectionLabel: { color: '#c9bea3', fontSize: 12, fontWeight: '700', letterSpacing: 1, marginTop: 4 },
-  muted: { color: '#b5ad94', fontSize: 13 },
-  note: { color: '#c9bea3', fontSize: 12, fontStyle: 'italic' },
-  card: { backgroundColor: '#211f18', borderWidth: 1, borderColor: '#393222', borderRadius: 10, padding: 14, gap: 6 },
-  cardActive: { borderColor: '#6b6b72' },
-  exName: { color: '#ffda62', fontSize: 16, fontWeight: '700' },
+  sectionLabel: { color: colors.textSecondary, fontSize: 12, fontWeight: '700', letterSpacing: 1, marginTop: 4 },
+  muted: { color: colors.textMuted, fontSize: 13 },
+  note: { color: colors.textSecondary, fontSize: 12, fontStyle: 'italic' },
+  card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 14, gap: 6 },
+  cardActive: { borderColor: colors.textFaint },
+  exName: { color: colors.accent, fontSize: 16, fontWeight: '700' },
   setRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 8, borderWidth: 1, borderColor: 'transparent' },
-  setRowCurrent: { borderColor: '#ffda62', backgroundColor: '#232327' },
+  setRowCurrent: { borderColor: colors.accent, backgroundColor: colors.surfaceRaised },
   setRowDone: { opacity: 0.55 },
-  setLabel: { color: '#d0d0d5', fontSize: 14, fontWeight: '600', width: 52 },
-  input: { flex: 1, minWidth: 0, height: 40, borderRadius: 8, borderWidth: 1, borderColor: '#50462b', backgroundColor: '#14130f', color: '#ffda62', textAlign: 'center', fontSize: 15 },
-  check: { width: 44, height: 40, borderRadius: 8, borderWidth: 1, borderColor: '#50462b', alignItems: 'center', justifyContent: 'center', marginLeft: 'auto' },
-  checkDone: { backgroundColor: '#3d7a4e', borderColor: '#3d7a4e' },
-  checkText: { color: '#6b6b72', fontSize: 18, fontWeight: '800' },
-  checkTextDone: { color: '#ffda62' },
-  primaryBtn: { backgroundColor: '#ffda62', borderRadius: 10, paddingVertical: 18, alignItems: 'center', marginTop: 12 },
-  primaryText: { color: '#14130f', fontSize: 16, fontWeight: '800' },
-  summary: { backgroundColor: '#211f18', borderWidth: 1, borderColor: '#50462b', borderRadius: 12, padding: 20, gap: 16 },
-  summaryTitle: { color: '#ffda62', fontSize: 22, fontWeight: '800', textAlign: 'center' },
+  setLabel: { color: colors.textSecondary, fontSize: 14, fontWeight: '600', width: 52 },
+  input: { flex: 1, minWidth: 0, height: 40, borderRadius: 8, borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.bg, color: colors.accent, textAlign: 'center', fontSize: 15 },
+  check: { width: 44, height: 40, borderRadius: 8, borderWidth: 1, borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center', marginLeft: 'auto' },
+  checkDone: { backgroundColor: colors.successBorder, borderColor: colors.successBorder },
+  checkText: { color: colors.textFaint, fontSize: 18, fontWeight: '800' },
+  checkTextDone: { color: colors.accent },
+  primaryBtn: { backgroundColor: colors.accent, borderRadius: 10, paddingVertical: 18, alignItems: 'center', marginTop: 12 },
+  primaryText: { color: colors.bg, fontSize: 16, fontWeight: '800' },
+  summary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: 12, padding: 20, gap: 16 },
+  summaryTitle: { color: colors.accent, fontSize: 22, fontWeight: '800', textAlign: 'center' },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   stat: { alignItems: 'center', gap: 2 },
-  statValue: { color: '#ffda62', fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  statValue: { color: colors.accent, fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] },
 });

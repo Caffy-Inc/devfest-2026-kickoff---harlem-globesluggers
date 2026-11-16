@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { HomeLogo } from '@/components/home-logo';
 import { NutritionBlueprint } from '@/components/nutrition-blueprint';
 import { useSelectedPlan } from '@/lib/selected-plan';
+import { colors } from '@/lib/theme';
 
 /** "Your Meals" tab: the Nutrition Blueprint for the selected plan. */
 export default function MyMealsScreen() {
@@ -43,21 +44,21 @@ export default function MyMealsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#0d0d0f' },
+  screen: { flex: 1, backgroundColor: colors.bg },
   content: { width: '100%', maxWidth: 560, alignSelf: 'center', paddingHorizontal: 20, paddingBottom: 64 },
   header: {
     paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2e',
+    borderBottomColor: colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: '#f5f5f5' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: colors.text },
   headerLogo: { width: 96, height: 30 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
-  title: { color: '#f5f5f5', fontSize: 22, fontWeight: '800' },
-  text: { color: '#a0a0a6', fontSize: 15, textAlign: 'center' },
-  btn: { backgroundColor: '#f5f5f5', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 24, marginTop: 8 },
-  btnText: { color: '#0d0d0f', fontWeight: '700', fontSize: 15 },
+  title: { color: colors.text, fontSize: 22, fontWeight: '800' },
+  text: { color: colors.textMuted, fontSize: 15, textAlign: 'center' },
+  btn: { backgroundColor: colors.accent, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 24, marginTop: 8 },
+  btnText: { color: colors.bg, fontWeight: '700', fontSize: 15 },
 });

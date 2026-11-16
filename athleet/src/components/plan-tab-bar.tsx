@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSelectedPlan } from '@/lib/selected-plan';
+import { colors } from '@/lib/theme';
 
 // The bottom tabs, defined once so the real tab navigator and the persistent bar below match.
 export const PLAN_TABS = [
@@ -13,10 +14,10 @@ export const PLAN_TABS = [
 ] as const;
 
 export const TAB_COLORS = {
-  background: '#0d0d0f',
-  border: '#2a2a2e',
-  active: '#f5f5f5',
-  inactive: '#6b6b72',
+  background: colors.bg,
+  border: colors.border,
+  active: colors.accent,
+  inactive: colors.textFaint,
 };
 
 /**

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CoachAvatar } from '@/components/coach-avatar';
 import type { Match } from '@/lib/match';
+import { colors } from '@/lib/theme';
 
 export function CoachCard({
   match, highlight, onPress,
@@ -31,13 +32,13 @@ export function CoachCard({
 const styles = StyleSheet.create({
   section: { marginTop: 12 },
   pressed: { opacity: 0.7 },
-  card: { backgroundColor: '#1a1a1d', borderWidth: 1, borderColor: '#2a2a2e', borderRadius: 6, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 16 },
-  cardHighlight: { borderColor: '#f5f5f5', borderWidth: 2, padding: 18 },
+  card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 6, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 16 },
+  cardHighlight: { borderColor: colors.accent, borderWidth: 2, padding: 18 },
   cardDim: { opacity: 0.5 },
   cardText: { flex: 1, minWidth: 0, gap: 2 },
-  chevron: { color: '#6b6b72', fontSize: 28, fontWeight: '300' },
-  category: { fontSize: 12, fontWeight: '700', color: '#8a8a90', textTransform: 'uppercase' },
-  name: { fontSize: 18, fontWeight: '700', color: '#f5f5f5' },
-  tagline: { fontSize: 14, color: '#a0a0a6' },
-  tags: { fontSize: 12, color: '#8a8a90', marginTop: 2 },
+  chevron: { color: colors.textFaint, fontSize: 28, fontWeight: '300' },
+  category: { fontSize: 12, fontWeight: '700', color: colors.textSubtle, textTransform: 'uppercase' },
+  name: { fontSize: 18, fontWeight: '700', color: colors.text },
+  tagline: { fontSize: 14, color: colors.textMuted },
+  tags: { fontSize: 12, color: colors.textSubtle, marginTop: 2 },
 });
