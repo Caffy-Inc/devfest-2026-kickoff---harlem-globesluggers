@@ -17,7 +17,7 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
   coach: Coach; parameters: PlanParams; newPlan?: boolean; initialDay?: number; voiceEnabled?: boolean;
 }) {
   const selected = useSelectedPlan();
-  const [mode, setMode] = useState<'saved' | 'preview'>(!newPlan && selected?.coachId === coach.id ? 'saved' : 'preview');
+  const [mode] = useState<'saved' | 'preview'>(!newPlan && selected?.coachId === coach.id ? 'saved' : 'preview');
   const [day, setDay] = useState<number | null>(initialDay !== undefined && selected?.plan.days[initialDay] ? initialDay : null);
   const [workout, setWorkout] = useState(day !== null);
   const [workoutKey, setWorkoutKey] = useState(0);
@@ -94,7 +94,7 @@ export function CoachTraining({ coach, parameters, newPlan = false, initialDay, 
       </View>
       {!workout && day !== null && !complete && <Pressable accessibilityRole="button" style={styles.resume} onPress={() => setWorkout(true)}><Text style={styles.link}>Resume workout with {coach.name.split(' ')[0]} →</Text></Pressable>}
       <View style={[styles.panel, workout && styles.hidden]}>
-        <PlanView key={mode} embedded parameters={parameters} mode={mode} onSelected={() => { setMode('saved'); setMessage('Your plan is saved. Choose a day below and let’s train together.'); }} onStartWorkout={startWorkout} onPlanChanged={resetWorkout} workoutInProgress={day !== null && !complete} />
+        <PlanView key={mode} embedded parameters={parameters} mode={mode} onStartWorkout={startWorkout} onPlanChanged={resetWorkout} workoutInProgress={day !== null && !complete} />
       </View>
       {day !== null && <View style={[styles.panel, !workout && styles.hidden]}><CoachWorkout key={`${day}:${workoutKey}`} dayIndex={day} onExit={showPlan} onCancelEmpty={() => { stop(); resetWorkout(); }} onCue={cue} onExerciseChange={exerciseChanged} /></View>}
     </KeyboardAvoidingView>

@@ -186,7 +186,8 @@ export function PlanView({ mode = 'preview', embedded = false, parameters, onSel
     if (!plan) return;
     selectPlan({ coachId, daysPerWeek, sessionMinutes, seed, plan, request: { coachId, age, sex, heightCm, weightKg, goal, level, daysPerWeek, sessionMinutes, equipment, injuries } });
     if (onSelected) { onSelected(); return; }
-    router.dismissAll();
+    // Leave the coach chat and land on the Your Plan tab.
+    if (router.canDismiss()) router.dismissAll();
     router.navigate('/my-plan');
   }
 

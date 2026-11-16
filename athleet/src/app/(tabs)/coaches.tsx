@@ -10,12 +10,14 @@ import { StreakBadge } from '@/components/streak-badge';
 import { COACHES } from '@/data/coaches';
 import { rankCoaches } from '@/lib/match';
 import { getProfile } from '@/lib/profile-store';
+import { useSelectedPlan } from '@/lib/selected-plan';
 import { colors } from '@/lib/theme';
 
 // The chatbot section: every coach, best matches first.
 export default function CoachesScreen() {
   const profile = getProfile();
-  const matches = useMemo(
+  const selectedCoachId = useSelectedPlan()?.coachId;
+  const ranked = useMemo(
     () =>
       rankCoaches(
         {
@@ -28,6 +30,11 @@ export default function CoachesScreen() {
       ),
     [profile]
   );
+  // "Your coach" is the coach whose plan you selected; before that, the questionnaire's best match.
+  const matches = useMemo(() => {
+    const i = ranked.findIndex(m => m.coach.id === selectedCoachId);
+    return i > 0 ? [ranked[i], ...ranked.slice(0, i), ...ranked.slice(i + 1)] : ranked;
+  }, [ranked, selectedCoachId]);
 
   function openChat(id: string) {
     router.push({ pathname: '/chat/[id]', params: { id } });
